@@ -1,0 +1,44 @@
+<mat-toolbar class="toolbar">
+  @if (isHandset()) {
+    <button
+      matIconButton
+      type="button"
+      [attr.aria-label]="'app.toggleMenu' | transloco"
+      (click)="sidenav.toggle()"
+    >
+      <mat-icon>menu</mat-icon>
+    </button>
+  }
+  <span>{{ 'app.title' | transloco }}</span>
+</mat-toolbar>
+
+<mat-sidenav-container class="container">
+  <mat-sidenav
+    #sidenav
+    class="sidenav"
+    [mode]="isHandset() ? 'over' : 'side'"
+    [opened]="!isHandset()"
+  >
+    <mat-nav-list>
+      @for (item of menuItems; track item.path) {
+        <a
+          mat-list-item
+          [routerLink]="item.path"
+          routerLinkActive
+          #active="routerLinkActive"
+          [activated]="active.isActive"
+          (click)="isHandset() && sidenav.close()"
+        >
+          <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+          <span matListItemTitle>{{ item.labelKey | transloco }}</span>
+        </a>
+      }
+    </mat-nav-list>
+  </mat-sidenav>
+
+  <mat-sidenav-content>
+    <main class="content">
+      <router-outlet />
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>

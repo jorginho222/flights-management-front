@@ -1,0 +1,127 @@
+<a matButton routerLink="/airlines" class="back">
+  <mat-icon>arrow_back</mat-icon>
+  {{ 'airlines.form.back' | transloco }}
+</a>
+
+<h1 class="title">
+  {{ (id() ? 'airlines.form.editTitle' : 'airlines.form.createTitle') | transloco }}
+</h1>
+
+@if (store.selectedLoading()) {
+  <mat-progress-bar mode="indeterminate" />
+} @else if (store.selectedError(); as error) {
+  <div class="state" role="alert">
+    @if (error.status === 404) {
+      <p>{{ 'airlines.form.notFound' | transloco }}</p>
+    } @else {
+      <p>{{ 'airlines.form.loadError' | transloco }}</p>
+      <button matButton="outlined" type="button" (click)="retryLoad()">
+        {{ 'common.retry' | transloco }}
+      </button>
+    }
+  </div>
+} @else {
+  <form [formGroup]="form" novalidate (ngSubmit)="submit()">
+    <section>
+      <h2>{{ 'airlines.form.sections.general' | transloco }}</h2>
+      <div class="fields">
+        <mat-form-field>
+          <mat-label>{{ 'airlines.form.fields.name' | transloco }}</mat-label>
+          <input matInput formControlName="name" autocomplete="off" />
+          <mat-error>
+            @if (fieldError(form.controls.name); as e) {
+              {{ e.key | transloco: e.params }}
+            }
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field>
+          <mat-label>{{ 'airlines.form.fields.code' | transloco }}</mat-label>
+          <input
+            matInput
+            formControlName="code"
+            autocomplete="off"
+            maxlength="2"
+            (input)="uppercaseCode()"
+          />
+          <mat-error>
+            @if (fieldError(form.controls.code); as e) {
+              {{ e.key | transloco: e.params }}
+            }
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field>
+          <mat-label>{{ 'airlines.form.fields.redeemFee' | transloco }}</mat-label>
+          <input matInput type="number" min="0" step="0.01" formControlName="redeemFee" />
+          <mat-error>
+            @if (fieldError(form.controls.redeemFee); as e) {
+              {{ e.key | transloco: e.params }}
+            }
+          </mat-error>
+        </mat-form-field>
+      </div>
+    </section>
+
+    <section formGroupName="luggage">
+      <h2>{{ 'airlines.form.sections.luggage' | transloco }}</h2>
+      <div class="fields">
+        @for (field of luggagePriceFields; track field) {
+          <mat-form-field>
+            <mat-label>{{ 'airlines.form.fields.' + field | transloco }}</mat-label>
+            <input matInput type="number" min="0" step="any" [formControlName]="field" />
+            <mat-error>
+              @if (fieldError(form.controls.luggage.controls[field]); as e) {
+                {{ e.key | transloco: e.params }}
+              }
+            </mat-error>
+          </mat-form-field>
+        }
+
+        <mat-form-field>
+          <mat-label>{{ 'airlines.form.fields.maxHandBaggage' | transloco }}</mat-label>
+          <input matInput type="number" min="0" step="1" formControlName="maxHandBaggage" />
+          <mat-error>
+            @if (fieldError(form.controls.luggage.controls.maxHandBaggage); as e) {
+              {{ e.key | transloco: e.params }}
+            }
+          </mat-error>
+        </mat-form-field>
+      </div>
+    </section>
+
+    <section formGroupName="classIncrements">
+      <h2>{{ 'airlines.form.sections.classIncrements' | transloco }}</h2>
+      <div class="fields">
+        @for (flightClass of flightClasses; track flightClass) {
+          <mat-form-field>
+            <mat-label>{{ 'airlines.form.fields.' + flightClass | transloco }}</mat-label>
+            <input matInput type="number" min="0" step="any" [formControlName]="flightClass" />
+            <mat-error>
+              @if (fieldError(form.controls.classIncrements.controls[flightClass]); as e) {
+                {{ e.key | transloco: e.params }}
+              }
+            </mat-error>
+          </mat-form-field>
+        }
+      </div>
+    </section>
+
+    @if (store.saveError(); as error) {
+      <div class="save-error" role="alert">
+        @for (message of error.messages; track message) {
+          <p>{{ message }}</p>
+        } @empty {
+          <p>{{ 'errors.generic' | transloco }}</p>
+        }
+      </div>
+    }
+
+    <div class="form-actions">
+      <a matButton routerLink="/airlines">{{ 'common.cancel' | transloco }}</a>
+      <button matButton="filled" type="submit" [disabled]="store.saving()">
+        {{ 'common.save' | transloco }}
+      </button>
+    </div>
+  </form>
+}

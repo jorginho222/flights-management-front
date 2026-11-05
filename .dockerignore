@@ -1,0 +1,14 @@
+.angular
+.git
+.github
+.idea
+.vscode
+coverage
+dist
+node_modules
+.env
+.env.*
+*.log
+Dockerfile
+docker-compose.yaml
+README.md
