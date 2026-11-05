@@ -79,12 +79,25 @@ describe('AirlineForm', () => {
     it.each([
       ['A', false],
       ['AB', true],
+      ['U2', true],
+      ['42', true],
+      ['la', true],
       ['ABC', false],
       ['A ', false],
+      ['A-', false],
+      ['Ñ1', false],
     ])('code %j valid: %s', async (value, valid) => {
       const { form } = await render();
       form.controls.code.setValue(value);
       expect(form.controls.code.valid).toBe(valid);
+    });
+
+    it('explains the code format', async () => {
+      const { fixture, el, form } = await render();
+      form.controls.code.setValue('A-');
+      form.controls.code.markAsTouched();
+      await settle(fixture);
+      expect(el.textContent).toContain('Use 2 letters or digits, such as LA or U2');
     });
 
     it.each([

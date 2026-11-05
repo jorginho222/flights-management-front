@@ -12,6 +12,12 @@
   }
 }
 
+.header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .state {
   padding: 48px 16px;
   text-align: center;

@@ -16,7 +16,7 @@ describe('AirlineList', () => {
   const alpha = airlineFixture({ id: 'a', name: 'Alpha Air', code: 'AA' });
 
   let api: { list: ReturnType<typeof vi.fn>; delete: ReturnType<typeof vi.fn> };
-  let afterClosed: Subject<boolean | undefined>;
+  let afterClosed: Subject<boolean | number | undefined>;
   let snackOpen: ReturnType<typeof vi.fn>;
 
   async function render(result: ReturnType<AirlinesApi['list']> = of([zulu, alpha])) {
@@ -98,6 +98,31 @@ describe('AirlineList', () => {
     await fixture.whenStable();
     expect(el.querySelector('[role="alert"]')).toBeNull();
     expect(rows(el)).toHaveLength(1);
+  });
+
+  it('reloads the list and notifies after an import', async () => {
+    const { fixture, el } = await render();
+    expect(api.list).toHaveBeenCalledOnce();
+
+    const importButton = Array.from(el.querySelectorAll('button')).find(
+      (button) => button.textContent?.trim() === 'upload_file Import',
+    )!;
+    importButton.click();
+    afterClosed.next(20);
+    await fixture.whenStable();
+
+    expect(snackOpen.mock.calls[0][0]).toBe('Airlines imported: 20');
+    expect(api.list).toHaveBeenCalledTimes(2);
+  });
+
+  it('does nothing when the import dialog is cancelled', async () => {
+    const { el } = await render();
+    Array.from(el.querySelectorAll('button'))
+      .find((button) => button.textContent?.trim() === 'upload_file Import')!
+      .click();
+    afterClosed.next(undefined);
+    expect(api.list).toHaveBeenCalledOnce();
+    expect(snackOpen).not.toHaveBeenCalled();
   });
 
   it('does not delete when the dialog is cancelled', async () => {

@@ -23,3 +23,14 @@ export interface Airline {
   flightClassPriceIncrements: FlightClassPriceIncrement[];
   redeemFee: number;
 }
+
+export interface AirlineImportResult {
+  imported: number;
+}
+
+/** One problem in an uploaded spreadsheet. `row` is the spreadsheet row number. */
+export interface AirlineImportRowError {
+  row: number;
+  column: string;
+  messages: string[];
+}

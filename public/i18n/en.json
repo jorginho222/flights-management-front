@@ -20,10 +20,10 @@
   "validation": {
     "required": "This field is required",
     "length": "Must be {{min}} to {{max}} characters",
-    "exactLength": "Must be exactly {{length}} characters",
     "min": "Must be {{min}} or greater",
     "integer": "Must be a whole number",
-    "maxDecimals": "Use at most {{max}} decimal places"
+    "maxDecimals": "Use at most {{max}} decimal places",
+    "airlineCode": "Use 2 letters or digits, such as LA or U2"
   },
   "paginator": {
     "itemsPerPage": "Items per page",
@@ -79,6 +79,22 @@
         "business": "Business",
         "first": "First"
       }
+    },
+    "import": {
+      "open": "Import",
+      "title": "Import airlines",
+      "help": "Upload an Excel (.xlsx) file with one airline per row. If any row is invalid, nothing is imported.",
+      "columns": "The first row must have these columns, in any order:",
+      "chooseFile": "Choose file",
+      "noFile": "No file chosen",
+      "submit": "Import",
+      "wrongType": "Choose an Excel file ending in .xlsx.",
+      "tooLarge": "The file is larger than {{max}}.",
+      "rowErrors": "Nothing was imported. Fix these {{count}} problems and try again:",
+      "row": "Row",
+      "column": "Column",
+      "problem": "Problem",
+      "success": "Airlines imported: {{count}}"
     }
   }
 }

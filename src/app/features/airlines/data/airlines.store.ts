@@ -5,6 +5,7 @@ import { removeEntity, setAllEntities, setEntity, withEntities } from '@ngrx/sig
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { concatMap, exhaustMap, of, pipe, switchMap, tap } from 'rxjs';
 import { ApiError, toApiError } from '../../../core/http/api-error';
+import { AirlineImportError, toAirlineImportError } from './airline-import-error';
 import { Airline } from './airline.model';
 import { AirlinesApi } from './airlines-api';
 
@@ -17,6 +18,8 @@ interface AirlinesState {
   saving: boolean;
   saveError: ApiError | null;
   deletingId: string | null;
+  importing: boolean;
+  importError: AirlineImportError | null;
 }
 
 const initialState: AirlinesState = {
@@ -28,12 +31,19 @@ const initialState: AirlinesState = {
   saving: false,
   saveError: null,
   deletingId: null,
+  importing: false,
+  importError: null,
 };
 
 export interface SaveAirlineRequest {
   airline: Airline;
   isNew: boolean;
   onSuccess: () => void;
+}
+
+export interface ImportAirlinesRequest {
+  file: File;
+  onSuccess: (imported: number) => void;
 }
 
 export interface DeleteAirlineRequest {
@@ -110,6 +120,30 @@ export const AirlinesStore = signalStore(
                 onSuccess();
               },
               error: (error) => patchState(store, { saving: false, saveError: toApiError(error) }),
+            }),
+          );
+        }),
+      ),
+    ),
+
+    /** Starts an import session. */
+    resetImport(): void {
+      patchState(store, { importing: false, importError: null });
+    },
+
+    /** The API imports all rows or none, so callers reload the list after a success. */
+    importFile: rxMethod<ImportAirlinesRequest>(
+      pipe(
+        exhaustMap(({ file, onSuccess }) => {
+          patchState(store, { importing: true, importError: null });
+          return api.importFile(file).pipe(
+            tapResponse({
+              next: ({ imported }) => {
+                patchState(store, { importing: false });
+                onSuccess(imported);
+              },
+              error: (error) =>
+                patchState(store, { importing: false, importError: toAirlineImportError(error) }),
             }),
           );
         }),

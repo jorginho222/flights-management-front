@@ -1,4 +1,4 @@
-import { Component, effect, inject, OnInit, viewChild } from '@angular/core';
+import { Component, effect, inject, Injector, OnInit, viewChild } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
@@ -12,6 +12,7 @@ import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { filter } from 'rxjs';
 import { ApiError } from '../../../core/http/api-error';
 import { ConfirmDialog, ConfirmDialogData } from '../../../shared/confirm-dialog/confirm-dialog';
+import { AirlineImportDialog } from '../airline-import/airline-import-dialog';
 import { Airline } from '../data/airline.model';
 import { AirlinesStore } from '../data/airlines.store';
 
@@ -35,6 +36,7 @@ export class AirlineList implements OnInit {
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private readonly transloco = inject(TranslocoService);
+  private readonly injector = inject(Injector);
 
   protected readonly columns = ['name', 'code', 'actions'];
   protected readonly dataSource = new MatTableDataSource<Airline>();
@@ -57,6 +59,21 @@ export class AirlineList implements OnInit {
 
   protected reload(): void {
     this.store.load();
+  }
+
+  protected openImport(): void {
+    this.dialog
+      .open<AirlineImportDialog, void, number>(AirlineImportDialog, {
+        // The store is provided on the feature route, which the root dialog injector can't see
+        injector: this.injector,
+        width: '640px',
+      })
+      .afterClosed()
+      .pipe(filter((imported) => imported !== undefined))
+      .subscribe((imported) => {
+        this.notify(this.transloco.translate('airlines.import.success', { count: imported }));
+        this.store.load();
+      });
   }
 
   protected confirmDelete(airline: Airline): void {

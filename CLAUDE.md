@@ -45,6 +45,7 @@ docker run -e API_URL=http://localhost:3000 -p 8080:8080 flights-front
 - Components pass `onSuccess`/`onError` callbacks into store methods for navigation and snackbars, because those are UI concerns.
 - Each `rxMethod`'s flattening operator is deliberate: `switchMap` for reads, `exhaustMap` for save (blocks double submits), `concatMap` for delete.
 - A store is provided on its feature route, so the list and form share one instance. That instance outlives the screens, so a form must reset its session on open (`loadOne`/`resetForm`). Move a store to root only when another feature needs it.
+- A `MatDialog` component that uses a feature store must be opened with `injector: this.injector` from the opening component (see `AirlineList.openImport`). Otherwise it gets the root injector, which can't see route-provided stores.
 - There is deliberately no generic CRUD store. Extract shared parts only once a second resource shows what's really common.
 
 **API format.** The API has no global prefix and no response envelope.
@@ -72,6 +73,8 @@ These can go out of date, so check `../flights-management/src/airlines/airlines.
 - Airlines has `GET /airlines` (plain array, sorted by name), `GET /airlines/:id`, `POST /airlines`, `POST /airlines/import` and `DELETE /airlines/:id`. Unknown ids return 404, and a non-UUID id returns 400.
 - There is no `PUT`. `POST /airlines` is an upsert keyed on the body's `id`, so `AirlinesApi.update` posts to it too. It returns 201 for both a create and an update.
 - `DELETE /airlines/:id` returns 409 while flights still use the airline.
+- Codes are unique and must be 2 letters or digits after trimming and uppercasing. A duplicate code returns 409.
+- `POST /airlines/import` takes one `.xlsx` file of up to 1 MiB in the `file` field, and imports every row or none. Success returns `{ imported }`. Invalid rows return 400 with `errors: [{ row, column, messages }]`, which `toAirlineImportError` reads. Whole-file problems (missing columns, a bad workbook) return 400 with only `message`, and a file over the limit returns 413.
 - The API only accepts browser requests from the origins in its `CORS_ORIGINS` variable, which defaults to `http://localhost:4200`.
 - The API has no authentication, so neither does the panel.
 - Many backend not-found cases surface as HTTP 500, not 404. Code that branches on status has to allow for this.

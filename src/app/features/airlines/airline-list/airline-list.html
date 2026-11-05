@@ -1,9 +1,15 @@
 <header class="header">
   <h1>{{ 'airlines.title' | transloco }}</h1>
-  <a matButton="filled" routerLink="new">
-    <mat-icon>add</mat-icon>
-    {{ 'airlines.new' | transloco }}
-  </a>
+  <div class="header-actions">
+    <button matButton="outlined" type="button" (click)="openImport()">
+      <mat-icon>upload_file</mat-icon>
+      {{ 'airlines.import.open' | transloco }}
+    </button>
+    <a matButton="filled" routerLink="new">
+      <mat-icon>add</mat-icon>
+      {{ 'airlines.new' | transloco }}
+    </a>
+  </div>
 </header>
 
 @if (store.listLoading()) {

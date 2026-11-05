@@ -13,14 +13,20 @@ describe('AirlinesStore', () => {
   let list$: Subject<Airline[]>;
   let get$: Subject<Airline>;
   let write$: Subject<void>;
-  let api: Record<'list' | 'get' | 'create' | 'update' | 'delete', ReturnType<typeof vi.fn>>;
+  let import$: Subject<{ imported: number }>;
+  let api: Record<
+    'list' | 'get' | 'create' | 'update' | 'delete' | 'importFile',
+    ReturnType<typeof vi.fn>
+  >;
   let store: InstanceType<typeof AirlinesStore>;
 
   beforeEach(() => {
     list$ = new Subject();
     get$ = new Subject();
     write$ = new Subject();
+    import$ = new Subject();
     api = {
+      importFile: vi.fn(() => import$),
       list: vi.fn(() => list$),
       get: vi.fn(() => get$),
       create: vi.fn(() => write$),
@@ -196,6 +202,54 @@ describe('AirlinesStore', () => {
       expect(store.entities()).toEqual([airline]);
       expect(store.deletingId()).toBeNull();
       expect(onError).toHaveBeenCalledWith({ status: 409, messages: ['Airline has flights'] });
+    });
+  });
+
+  describe('importFile', () => {
+    const file = new File(['x'], 'airlines.xlsx');
+
+    it('reports the imported count after the API confirms', () => {
+      const onSuccess = vi.fn();
+      store.importFile({ file, onSuccess });
+      expect(api.importFile).toHaveBeenCalledWith(file);
+      expect(store.importing()).toBe(true);
+
+      import$.next({ imported: 20 });
+      expect(store.importing()).toBe(false);
+      expect(onSuccess).toHaveBeenCalledWith(20);
+    });
+
+    it('ignores a repeat import while one is running', () => {
+      store.importFile({ file, onSuccess: vi.fn() });
+      store.importFile({ file, onSuccess: vi.fn() });
+      expect(api.importFile).toHaveBeenCalledOnce();
+    });
+
+    it('stores the row errors when the file is rejected', () => {
+      const onSuccess = vi.fn();
+      store.importFile({ file, onSuccess });
+      const rows = [
+        { row: 3, column: 'code', messages: ['an airline with code LA already exists'] },
+      ];
+      import$.error(
+        new HttpErrorResponse({
+          status: 400,
+          error: { message: 'The file has invalid rows, so nothing was imported', errors: rows },
+        }),
+      );
+
+      expect(store.importing()).toBe(false);
+      expect(store.importError()?.rows).toEqual(rows);
+      expect(onSuccess).not.toHaveBeenCalled();
+    });
+
+    it('clears the error when a new import session starts', () => {
+      store.importFile({ file, onSuccess: vi.fn() });
+      import$.error(new HttpErrorResponse({ status: 413, error: { message: 'File too large' } }));
+      expect(store.importError()?.messages).toEqual(['File too large']);
+
+      store.resetImport();
+      expect(store.importError()).toBeNull();
     });
   });
 });
