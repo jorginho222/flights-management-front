@@ -60,6 +60,19 @@ describe('AirlinesApi', () => {
     request.flush(null, { status: 201, statusText: 'Created' });
   });
 
+  it('uploads an import file as multipart form data in the "file" field', () => {
+    const file = new File(['data'], 'airlines.xlsx');
+    let result: unknown;
+    api.importFile(file).subscribe((value) => (result = value));
+
+    const request = http.expectOne(`${baseUrl}/import`);
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toBeInstanceOf(FormData);
+    expect((request.request.body as FormData).get('file')).toBe(file);
+    request.flush({ imported: 3 }, { status: 201, statusText: 'Created' });
+    expect(result).toEqual({ imported: 3 });
+  });
+
   it('deletes with DELETE', () => {
     api.delete('a-1').subscribe();
     const request = http.expectOne(`${baseUrl}/a-1`);

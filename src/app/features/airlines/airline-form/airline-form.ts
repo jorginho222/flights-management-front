@@ -17,7 +17,7 @@ import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { toAirline, toAirlineFormValue, AirlineFormValue } from '../data/airline-form.mapper';
 import { FLIGHT_CLASSES } from '../data/airline.model';
 import { AirlinesStore } from '../data/airlines.store';
-import { integer, maxDecimals, trimmedLength } from './airline-form.validators';
+import { airlineCode, integer, maxDecimals, trimmedLength } from './airline-form.validators';
 
 interface FieldError {
   key: string;
@@ -58,7 +58,7 @@ export class AirlineForm {
 
   protected readonly form = this.formBuilder.group({
     name: ['', [Validators.required, trimmedLength(3, 50)]],
-    code: ['', [Validators.required, trimmedLength(2, 2)]],
+    code: ['', [Validators.required, airlineCode]],
     redeemFee: this.numberControl(maxDecimals(2)),
     luggage: this.formBuilder.group({
       handBaggagePrice: this.numberControl(),
@@ -120,9 +120,10 @@ export class AirlineForm {
     }
     if (errors['trimmedLength']) {
       const { min, max } = errors['trimmedLength'];
-      return min === max
-        ? { key: 'validation.exactLength', params: { length: min } }
-        : { key: 'validation.length', params: { min, max } };
+      return { key: 'validation.length', params: { min, max } };
+    }
+    if (errors['airlineCode']) {
+      return { key: 'validation.airlineCode' };
     }
     if (errors['min']) {
       return { key: 'validation.min', params: { min: errors['min'].min } };

@@ -12,6 +12,12 @@
   }
 }
 
+.header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .state {
   padding: 48px 16px;
   text-align: center;
@@ -21,10 +27,14 @@
   overflow-x: auto;
 }
 
+// Material cells use text-overflow: ellipsis. Each icon button's invisible 48px
+// touch target sticks out 4px past the 40px button, and Firefox then replaces the
+// last button with "…". Clip instead; width: 1% shrinks the cell to its buttons.
 .actions {
-  width: 112px;
+  width: 1%;
   text-align: end;
   white-space: nowrap;
+  text-overflow: clip;
 }
 
 .visually-hidden {

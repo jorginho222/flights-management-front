@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { AppConfigService } from '../../../core/config/app-config';
-import { Airline } from './airline.model';
+import { Airline, AirlineImportResult } from './airline.model';
 
 @Injectable({ providedIn: 'root' })
 export class AirlinesApi {
@@ -28,6 +28,13 @@ export class AirlinesApi {
   // The API has no PUT: POST /airlines upserts by the id in the body
   update(airline: Airline): Observable<void> {
     return this.http.post<void>(this.baseUrl, airline);
+  }
+
+  /** Uploads an .xlsx file. The API imports every row or none. */
+  importFile(file: File): Observable<AirlineImportResult> {
+    const body = new FormData();
+    body.append('file', file);
+    return this.http.post<AirlineImportResult>(`${this.baseUrl}/import`, body);
   }
 
   delete(id: string): Observable<void> {
