@@ -46,13 +46,13 @@ docker run -e API_URL=http://localhost:3000 -p 8080:8080 flights-front
 - Each `rxMethod`'s flattening operator is deliberate: `switchMap` for reads, `exhaustMap` for save (blocks double submits), `concatMap` for delete.
 - A store is provided on its feature route, so the list and form share one instance. That instance outlives the screens, so a form must reset its session on open (`loadOne`/`resetForm`). Move a store to root only when another feature needs it.
 - A `MatDialog` component that uses a feature store must be opened with `injector: this.injector` from the opening component (see `AirlineList.openImport`). Otherwise it gets the root injector, which can't see route-provided stores.
-- There is deliberately no generic CRUD store. Extract shared parts only once a second resource shows what's really common.
+- There is deliberately no generic CRUD store. Extract shared parts only once a second resource shows what's really common. So far that is `shared/flight-classes.ts`, the validators in `shared/forms/validators.ts`, the import types and `toImportError` in `core/http/spreadsheet-import.ts`, and the `flightClasses` and `import` translation blocks.
 
 **API format.** The API has no global prefix and no response envelope.
 
 - The underscore keys in `luggageRules` (such as `_priceHandBaggage`) are the real wire format. Keep them confined to `airline.model.ts` and `airline-form.mapper.ts`.
 - The client generates airline `id`s with `crypto.randomUUID()`, which browsers only provide on HTTPS or localhost. `AirlineForm` reuses the id when retrying a failed create.
-- `POST` returns an empty body, so re-read data rather than expecting one back.
+- `POST /airlines` returns an empty body, while `POST /airplanes` returns the saved airplane. Stores ignore both and keep what they sent, so re-read data rather than expecting a body back.
 
 **Errors.** Convert HTTP errors with `toApiError` (`core/http/api-error.ts`). It handles Nest's `message` being a string or `string[]`, and keeps messages only for 4xx. An empty `messages` array means the UI shows its generic `errors.generic` text.
 
@@ -74,7 +74,11 @@ These can go out of date, so check `../flights-management/src/airlines/airlines.
 - There is no `PUT`. `POST /airlines` is an upsert keyed on the body's `id`, so `AirlinesApi.update` posts to it too. It returns 201 for both a create and an update.
 - `DELETE /airlines/:id` returns 409 while flights still use the airline.
 - Codes are unique and must be 2 letters or digits after trimming and uppercasing. A duplicate code returns 409.
-- `POST /airlines/import` takes one `.xlsx` file of up to 1 MiB in the `file` field, and imports every row or none. Success returns `{ imported }`. Invalid rows return 400 with `errors: [{ row, column, messages }]`, which `toAirlineImportError` reads. Whole-file problems (missing columns, a bad workbook) return 400 with only `message`, and a file over the limit returns 413.
+- `POST /airlines/import` takes one `.xlsx` file of up to 1 MiB in the `file` field, and imports every row or none. Success returns `{ imported }`. Invalid rows return 400 with `errors: [{ row, column, messages }]`, which `toImportError` reads. Whole-file problems (missing columns, a bad workbook) return 400 with only `message`, and a file over the limit returns 413.
+- Airplanes has `GET /airplanes` (sorted by brand, then model), `POST /airplanes` (upsert by `id`, returns the saved airplane), `POST /airplanes/import` and `DELETE /airplanes/:id` (409 while flights use it). There is no `GET /airplanes/:id`, so `AirplanesStore.loadOne` loads the list when the store doesn't have the airplane, and reports a missing one as 404.
+- Airplane models are unique (409). `passengersCapacity` must equal the seats in `seatsConfig`, so `AirplaneForm` computes it instead of offering a field. Each class appears at most once, with 1–100 rows and 1–26 columns.
+- Airplanes also have `PUT /airplanes/:id/upload-file` and `PUT /airplanes/:id/delete-file` for an image (`imageUrl`). The panel doesn't use them yet. A save leaves `imageUrl` out of the body, so the stored image is kept.
+- The airplane import has `brand`, `model`, `passengersCapacity` and a `<class>Rows`/`<class>Columns` pair per class, left blank when the airplane lacks that class.
 - The API only accepts browser requests from the origins in its `CORS_ORIGINS` variable, which defaults to `http://localhost:4200`.
 - The API has no authentication, so neither does the panel.
 - Many backend not-found cases surface as HTTP 500, not 404. Code that branches on status has to allow for this.

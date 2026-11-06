@@ -5,7 +5,7 @@ import { removeEntity, setAllEntities, setEntity, withEntities } from '@ngrx/sig
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { concatMap, exhaustMap, of, pipe, switchMap, tap } from 'rxjs';
 import { ApiError, toApiError } from '../../../core/http/api-error';
-import { AirlineImportError, toAirlineImportError } from './airline-import-error';
+import { ImportError, toImportError } from '../../../core/http/spreadsheet-import';
 import { Airline } from './airline.model';
 import { AirlinesApi } from './airlines-api';
 
@@ -19,7 +19,7 @@ interface AirlinesState {
   saveError: ApiError | null;
   deletingId: string | null;
   importing: boolean;
-  importError: AirlineImportError | null;
+  importError: ImportError | null;
 }
 
 const initialState: AirlinesState = {
@@ -143,7 +143,7 @@ export const AirlinesStore = signalStore(
                 onSuccess(imported);
               },
               error: (error) =>
-                patchState(store, { importing: false, importError: toAirlineImportError(error) }),
+                patchState(store, { importing: false, importError: toImportError(error) }),
             }),
           );
         }),

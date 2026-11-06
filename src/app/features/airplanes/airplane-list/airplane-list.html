@@ -1,0 +1,140 @@
+<header class="header">
+  <h1>{{ 'airplanes.title' | transloco }}</h1>
+  <div class="header-actions">
+    <button matButton="outlined" type="button" (click)="openImport()">
+      <mat-icon>upload_file</mat-icon>
+      {{ 'airplanes.import.open' | transloco }}
+    </button>
+    <a matButton="filled" routerLink="new">
+      <mat-icon>add</mat-icon>
+      {{ 'airplanes.new' | transloco }}
+    </a>
+  </div>
+</header>
+
+@if (store.listLoading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+@if (store.listError()) {
+  <div class="state" role="alert">
+    <p>{{ 'airplanes.list.loadError' | transloco }}</p>
+    <button matButton="outlined" type="button" (click)="reload()">
+      {{ 'common.retry' | transloco }}
+    </button>
+  </div>
+} @else if (!store.listLoading() && store.entities().length === 0) {
+  <div class="state">
+    <p>{{ 'airplanes.list.empty' | transloco }}</p>
+  </div>
+} @else if (store.entities().length > 0) {
+  <div class="filters">
+    <mat-form-field>
+      <mat-label>{{ 'airplanes.filters.brand' | transloco }}</mat-label>
+      <mat-select [value]="brand()" (selectionChange)="brand.set($event.value)">
+        <mat-option value="">{{ 'airplanes.filters.allBrands' | transloco }}</mat-option>
+        @for (option of brands(); track option) {
+          <mat-option [value]="option">{{ option }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>{{ 'airplanes.filters.model' | transloco }}</mat-label>
+      <input
+        matInput
+        autocomplete="off"
+        [value]="model()"
+        (input)="model.set(modelInput.value)"
+        #modelInput
+      />
+      @if (model()) {
+        <button
+          matIconButton
+          matSuffix
+          type="button"
+          [attr.aria-label]="'airplanes.filters.clearModel' | transloco"
+          (click)="model.set('')"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
+      }
+    </mat-form-field>
+  </div>
+
+  <div class="table-wrapper">
+    <table
+      mat-table
+      [dataSource]="dataSource"
+      matSort
+      matSortActive="brand"
+      matSortDirection="asc"
+      matSortDisableClear
+    >
+      <ng-container matColumnDef="brand">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>
+          {{ 'airplanes.columns.brand' | transloco }}
+        </th>
+        <td mat-cell *matCellDef="let airplane">{{ airplane.brand }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="model">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>
+          {{ 'airplanes.columns.model' | transloco }}
+        </th>
+        <td mat-cell *matCellDef="let airplane">{{ airplane.model }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="passengersCapacity">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>
+          {{ 'airplanes.columns.passengersCapacity' | transloco }}
+        </th>
+        <td mat-cell *matCellDef="let airplane">{{ airplane.passengersCapacity }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="seatClasses">
+        <th mat-header-cell *matHeaderCellDef>
+          {{ 'airplanes.columns.seatClasses' | transloco }}
+        </th>
+        <td mat-cell *matCellDef="let airplane">{{ seatClasses(airplane) }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef class="actions">
+          <span class="visually-hidden">{{ 'airplanes.columns.actions' | transloco }}</span>
+        </th>
+        <td mat-cell *matCellDef="let airplane" class="actions">
+          <a
+            matIconButton
+            [routerLink]="[airplane.id, 'edit']"
+            [attr.aria-label]="'airplanes.list.editAria' | transloco: { name: name(airplane) }"
+          >
+            <mat-icon>edit</mat-icon>
+          </a>
+          <button
+            matIconButton
+            type="button"
+            [disabled]="store.deletingId() === airplane.id"
+            [attr.aria-label]="'airplanes.list.deleteAria' | transloco: { name: name(airplane) }"
+            (click)="confirmDelete(airplane)"
+          >
+            <mat-icon>delete</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="columns"></tr>
+      <tr mat-row *matRowDef="let row; columns: columns"></tr>
+      <tr class="mat-mdc-row" *matNoDataRow>
+        <td class="mat-mdc-cell no-matches" [attr.colspan]="columns.length">
+          {{ 'airplanes.filters.noMatches' | transloco }}
+          <button matButton type="button" (click)="clearFilters()">
+            {{ 'airplanes.filters.clear' | transloco }}
+          </button>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <mat-paginator [pageSize]="10" [pageSizeOptions]="[10, 25, 50]" showFirstLastButtons />
+}

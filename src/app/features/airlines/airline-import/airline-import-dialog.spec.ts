@@ -5,7 +5,8 @@ import { Subject } from 'rxjs';
 import { translocoTesting } from '../../../core/i18n/transloco-testing';
 import { AirlinesApi } from '../data/airlines-api';
 import { AirlinesStore } from '../data/airlines.store';
-import { AirlineImportDialog, MAX_IMPORT_FILE_BYTES } from './airline-import-dialog';
+import { MAX_IMPORT_FILE_BYTES } from '../../../core/http/spreadsheet-import';
+import { AirlineImportDialog } from './airline-import-dialog';
 
 describe('AirlineImportDialog', () => {
   let import$: Subject<{ imported: number }>;

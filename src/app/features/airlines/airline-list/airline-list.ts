@@ -69,7 +69,8 @@ export class AirlineList implements OnInit {
         width: '640px',
       })
       .afterClosed()
-      .pipe(filter((imported) => imported !== undefined))
+      // A bare mat-dialog-close (Cancel) closes with '', so only a number means an import ran
+      .pipe(filter((imported): imported is number => typeof imported === 'number'))
       .subscribe((imported) => {
         this.notify(this.transloco.translate('airlines.import.success', { count: imported }));
         this.store.load();

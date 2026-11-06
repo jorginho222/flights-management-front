@@ -3,7 +3,7 @@
 <mat-dialog-content>
   <p>{{ 'airlines.import.help' | transloco }}</p>
   <p class="columns">
-    <span>{{ 'airlines.import.columns' | transloco }}</span>
+    <span>{{ 'import.columns' | transloco }}</span>
     <code>{{ columns }}</code>
   </p>
 
@@ -22,10 +22,10 @@
       (click)="fileInput.click()"
     >
       <mat-icon>upload_file</mat-icon>
-      {{ 'airlines.import.chooseFile' | transloco }}
+      {{ 'import.chooseFile' | transloco }}
     </button>
     <span class="file-name">
-      {{ file()?.name ?? ('airlines.import.noFile' | transloco) }}
+      {{ file()?.name ?? ('import.noFile' | transloco) }}
     </span>
   </div>
 
@@ -40,7 +40,7 @@
   } @else if (store.importError(); as error) {
     <div class="error" role="alert">
       @if (error.rows.length > 0) {
-        <p>{{ 'airlines.import.rowErrors' | transloco: { count: error.rows.length } }}</p>
+        <p>{{ 'import.rowErrors' | transloco: { count: error.rows.length } }}</p>
       } @else {
         @for (message of error.messages; track message) {
           <p>{{ message }}</p>
@@ -55,9 +55,9 @@
         <table>
           <thead>
             <tr>
-              <th scope="col">{{ 'airlines.import.row' | transloco }}</th>
-              <th scope="col">{{ 'airlines.import.column' | transloco }}</th>
-              <th scope="col">{{ 'airlines.import.problem' | transloco }}</th>
+              <th scope="col">{{ 'import.row' | transloco }}</th>
+              <th scope="col">{{ 'import.column' | transloco }}</th>
+              <th scope="col">{{ 'import.problem' | transloco }}</th>
             </tr>
           </thead>
           <tbody>
@@ -85,6 +85,6 @@
     [disabled]="!file() || store.importing()"
     (click)="upload()"
   >
-    {{ 'airlines.import.submit' | transloco }}
+    {{ 'import.submit' | transloco }}
   </button>
 </mat-dialog-actions>

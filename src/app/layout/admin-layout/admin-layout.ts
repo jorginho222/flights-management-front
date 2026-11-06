@@ -29,6 +29,7 @@ import { map } from 'rxjs';
 export class AdminLayout {
   protected readonly menuItems = [
     { path: '/airlines', icon: 'flight', labelKey: 'menu.airlines' },
+    { path: '/airplanes', icon: 'airplanemode_active', labelKey: 'menu.airplanes' },
   ] as const;
 
   protected readonly isHandset = toSignal(

@@ -1,0 +1,90 @@
+<h2 mat-dialog-title>{{ 'airplanes.import.title' | transloco }}</h2>
+
+<mat-dialog-content>
+  <p>{{ 'airplanes.import.help' | transloco }}</p>
+  <p class="columns">
+    <span>{{ 'import.columns' | transloco }}</span>
+    <code>{{ columns }}</code>
+  </p>
+
+  <div class="picker">
+    <input
+      #fileInput
+      type="file"
+      class="file-input"
+      accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      (change)="onFileSelected(fileInput)"
+    />
+    <button
+      matButton="outlined"
+      type="button"
+      [disabled]="store.importing()"
+      (click)="fileInput.click()"
+    >
+      <mat-icon>upload_file</mat-icon>
+      {{ 'import.chooseFile' | transloco }}
+    </button>
+    <span class="file-name">
+      {{ file()?.name ?? ('import.noFile' | transloco) }}
+    </span>
+  </div>
+
+  @if (store.importing()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  @if (fileError(); as key) {
+    <div class="error" role="alert">
+      <p>{{ key | transloco: { max: '1 MB' } }}</p>
+    </div>
+  } @else if (store.importError(); as error) {
+    <div class="error" role="alert">
+      @if (error.rows.length > 0) {
+        <p>{{ 'import.rowErrors' | transloco: { count: error.rows.length } }}</p>
+      } @else {
+        @for (message of error.messages; track message) {
+          <p>{{ message }}</p>
+        } @empty {
+          <p>{{ 'errors.generic' | transloco }}</p>
+        }
+      }
+    </div>
+
+    @if (error.rows.length > 0) {
+      <div class="row-errors">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">{{ 'import.row' | transloco }}</th>
+              <th scope="col">{{ 'import.column' | transloco }}</th>
+              <th scope="col">{{ 'import.problem' | transloco }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (rowError of error.rows; track $index) {
+              <tr>
+                <td>{{ rowError.row }}</td>
+                <td>{{ rowError.column }}</td>
+                <td>{{ rowError.messages.join('; ') }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button matButton type="button" mat-dialog-close [disabled]="store.importing()">
+    {{ 'common.cancel' | transloco }}
+  </button>
+  <button
+    matButton="filled"
+    type="button"
+    [disabled]="!file() || store.importing()"
+    (click)="upload()"
+  >
+    {{ 'import.submit' | transloco }}
+  </button>
+</mat-dialog-actions>
