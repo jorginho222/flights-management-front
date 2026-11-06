@@ -16,7 +16,7 @@ describe('AirlineList', () => {
   const alpha = airlineFixture({ id: 'a', name: 'Alpha Air', code: 'AA' });
 
   let api: { list: ReturnType<typeof vi.fn>; delete: ReturnType<typeof vi.fn> };
-  let afterClosed: Subject<boolean | number | undefined>;
+  let afterClosed: Subject<boolean | number | string | undefined>;
   let snackOpen: ReturnType<typeof vi.fn>;
 
   async function render(result: ReturnType<AirlinesApi['list']> = of([zulu, alpha])) {
@@ -115,12 +115,15 @@ describe('AirlineList', () => {
     expect(api.list).toHaveBeenCalledTimes(2);
   });
 
-  it('does nothing when the import dialog is cancelled', async () => {
+  it.each([
+    ['the Cancel button', ''],
+    ['Escape or a backdrop click', undefined],
+  ])('does nothing when the import dialog is closed with %s', async (_, result) => {
     const { el } = await render();
     Array.from(el.querySelectorAll('button'))
       .find((button) => button.textContent?.trim() === 'upload_file Import')!
       .click();
-    afterClosed.next(undefined);
+    afterClosed.next(result);
     expect(api.list).toHaveBeenCalledOnce();
     expect(snackOpen).not.toHaveBeenCalled();
   });
