@@ -1,0 +1,116 @@
+<a matButton routerLink="/airplanes" class="back">
+  <mat-icon>arrow_back</mat-icon>
+  {{ 'airplanes.form.back' | transloco }}
+</a>
+
+<h1 class="title">
+  {{ (id() ? 'airplanes.form.editTitle' : 'airplanes.form.createTitle') | transloco }}
+</h1>
+
+@if (store.selectedLoading()) {
+  <mat-progress-bar mode="indeterminate" />
+} @else if (store.selectedError(); as error) {
+  <div class="state" role="alert">
+    @if (error.status === 404) {
+      <p>{{ 'airplanes.form.notFound' | transloco }}</p>
+    } @else {
+      <p>{{ 'airplanes.form.loadError' | transloco }}</p>
+      <button matButton="outlined" type="button" (click)="retryLoad()">
+        {{ 'common.retry' | transloco }}
+      </button>
+    }
+  </div>
+} @else {
+  <form [formGroup]="form" novalidate (ngSubmit)="submit()">
+    <section>
+      <h2>{{ 'airplanes.form.sections.general' | transloco }}</h2>
+      <div class="fields">
+        <mat-form-field>
+          <mat-label>{{ 'airplanes.form.fields.brand' | transloco }}</mat-label>
+          <input matInput formControlName="brand" autocomplete="off" />
+          <mat-error>
+            @if (fieldError(form.controls.brand); as e) {
+              {{ e.key | transloco: e.params }}
+            }
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field>
+          <mat-label>{{ 'airplanes.form.fields.model' | transloco }}</mat-label>
+          <input matInput formControlName="model" autocomplete="off" />
+          <mat-error>
+            @if (fieldError(form.controls.model); as e) {
+              {{ e.key | transloco: e.params }}
+            }
+          </mat-error>
+        </mat-form-field>
+      </div>
+    </section>
+
+    <section formGroupName="seats">
+      <h2>{{ 'airplanes.form.sections.seats' | transloco }}</h2>
+      <p class="help">{{ 'airplanes.form.seatsHelp' | transloco }}</p>
+
+      @for (flightClass of flightClasses; track flightClass) {
+        @let group = seatGroup(flightClass);
+        <div class="seat-class" [formGroupName]="flightClass">
+          <mat-checkbox class="seat-class-toggle" formControlName="enabled">
+            {{ 'flightClasses.' + flightClass | transloco }}
+          </mat-checkbox>
+
+          <mat-form-field>
+            <mat-label>{{ 'airplanes.form.fields.rows' | transloco }}</mat-label>
+            <input matInput type="number" min="1" [max]="maxRows" step="1" formControlName="rows" />
+            <mat-error>
+              @if (fieldError(group.controls.rows); as e) {
+                {{ e.key | transloco: e.params }}
+              }
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field>
+            <mat-label>{{ 'airplanes.form.fields.columns' | transloco }}</mat-label>
+            <input
+              matInput
+              type="number"
+              min="1"
+              [max]="maxColumns"
+              step="1"
+              formControlName="columns"
+            />
+            <mat-error>
+              @if (fieldError(group.controls.columns); as e) {
+                {{ e.key | transloco: e.params }}
+              }
+            </mat-error>
+          </mat-form-field>
+        </div>
+      }
+
+      @if (form.controls.seats.hasError('noSeatClasses') && form.controls.seats.touched) {
+        <p class="field-error" role="alert">{{ 'airplanes.form.noSeatClasses' | transloco }}</p>
+      }
+
+      <p class="capacity" aria-live="polite">
+        {{ 'airplanes.form.capacity' | transloco: { count: capacity() } }}
+      </p>
+    </section>
+
+    @if (store.saveError(); as error) {
+      <div class="save-error" role="alert">
+        @for (message of error.messages; track message) {
+          <p>{{ message }}</p>
+        } @empty {
+          <p>{{ 'errors.generic' | transloco }}</p>
+        }
+      </div>
+    }
+
+    <div class="form-actions">
+      <a matButton routerLink="/airplanes">{{ 'common.cancel' | transloco }}</a>
+      <button matButton="filled" type="submit" [disabled]="store.saving()">
+        {{ 'common.save' | transloco }}
+      </button>
+    </div>
+  </form>
+}
