@@ -34,6 +34,24 @@
     "rangeEmpty": "0 of {{length}}",
     "range": "{{start}} – {{end}} of {{length}}"
   },
+  "flightClasses": {
+    "economy": "Economy",
+    "premiumEconomy": "Premium Economy",
+    "business": "Business",
+    "first": "First"
+  },
+  "import": {
+    "columns": "The first row must have these columns, in any order:",
+    "chooseFile": "Choose file",
+    "noFile": "No file chosen",
+    "submit": "Import",
+    "wrongType": "Choose an Excel file ending in .xlsx.",
+    "tooLarge": "The file is larger than {{max}}.",
+    "rowErrors": "Nothing was imported. Fix these {{count}} problems and try again:",
+    "row": "Row",
+    "column": "Column",
+    "problem": "Problem"
+  },
   "airlines": {
     "title": "Airlines",
     "new": "New airline",
@@ -73,27 +91,13 @@
         "handBaggagePrice": "Hand baggage price",
         "maxHandBaggage": "Max hand baggage",
         "checkedLuggagePrice": "Checked luggage price",
-        "exceededWeightPrice": "Exceeded weight price",
-        "economy": "Economy",
-        "premiumEconomy": "Premium Economy",
-        "business": "Business",
-        "first": "First"
+        "exceededWeightPrice": "Exceeded weight price"
       }
     },
     "import": {
       "open": "Import",
       "title": "Import airlines",
       "help": "Upload an Excel (.xlsx) file with one airline per row. If any row is invalid, nothing is imported.",
-      "columns": "The first row must have these columns, in any order:",
-      "chooseFile": "Choose file",
-      "noFile": "No file chosen",
-      "submit": "Import",
-      "wrongType": "Choose an Excel file ending in .xlsx.",
-      "tooLarge": "The file is larger than {{max}}.",
-      "rowErrors": "Nothing was imported. Fix these {{count}} problems and try again:",
-      "row": "Row",
-      "column": "Column",
-      "problem": "Problem",
       "success": "Airlines imported: {{count}}"
     }
   }

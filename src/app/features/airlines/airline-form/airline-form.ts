@@ -15,9 +15,10 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { toAirline, toAirlineFormValue, AirlineFormValue } from '../data/airline-form.mapper';
-import { FLIGHT_CLASSES } from '../data/airline.model';
 import { AirlinesStore } from '../data/airlines.store';
-import { airlineCode, integer, maxDecimals, trimmedLength } from './airline-form.validators';
+import { FLIGHT_CLASSES } from '../../../shared/flight-classes';
+import { integer, maxDecimals, trimmedLength } from '../../../shared/forms/validators';
+import { airlineCode } from './airline-form.validators';
 
 interface FieldError {
   key: string;

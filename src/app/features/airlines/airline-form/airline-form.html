@@ -95,7 +95,7 @@
       <div class="fields">
         @for (flightClass of flightClasses; track flightClass) {
           <mat-form-field>
-            <mat-label>{{ 'airlines.form.fields.' + flightClass | transloco }}</mat-label>
+            <mat-label>{{ 'flightClasses.' + flightClass | transloco }}</mat-label>
             <input matInput type="number" min="0" step="any" [formControlName]="flightClass" />
             <mat-error>
               @if (fieldError(form.controls.classIncrements.controls[flightClass]); as e) {

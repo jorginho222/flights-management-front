@@ -4,10 +4,8 @@ import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { MAX_IMPORT_FILE_BYTES } from '../../../core/http/spreadsheet-import';
 import { AirlinesStore } from '../data/airlines.store';
-
-/** Matches the API's upload limit, so too-large files are rejected before uploading. */
-export const MAX_IMPORT_FILE_BYTES = 1024 * 1024;
 
 /** Columns the API requires in the first row, in any order. */
 export const IMPORT_COLUMNS = [
@@ -59,9 +57,9 @@ export class AirlineImportDialog {
 
     this.store.resetImport();
     if (!file.name.toLowerCase().endsWith('.xlsx')) {
-      this.reject('airlines.import.wrongType');
+      this.reject('import.wrongType');
     } else if (file.size > MAX_IMPORT_FILE_BYTES) {
-      this.reject('airlines.import.tooLarge');
+      this.reject('import.tooLarge');
     } else {
       this.fileError.set(null);
       this.file.set(file);

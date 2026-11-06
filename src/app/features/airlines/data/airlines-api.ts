@@ -2,7 +2,8 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { AppConfigService } from '../../../core/config/app-config';
-import { Airline, AirlineImportResult } from './airline.model';
+import { ImportResult } from '../../../core/http/spreadsheet-import';
+import { Airline } from './airline.model';
 
 @Injectable({ providedIn: 'root' })
 export class AirlinesApi {
@@ -31,10 +32,10 @@ export class AirlinesApi {
   }
 
   /** Uploads an .xlsx file. The API imports every row or none. */
-  importFile(file: File): Observable<AirlineImportResult> {
+  importFile(file: File): Observable<ImportResult> {
     const body = new FormData();
     body.append('file', file);
-    return this.http.post<AirlineImportResult>(`${this.baseUrl}/import`, body);
+    return this.http.post<ImportResult>(`${this.baseUrl}/import`, body);
   }
 
   delete(id: string): Observable<void> {

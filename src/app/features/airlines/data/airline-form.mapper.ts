@@ -1,4 +1,5 @@
-import { Airline, FLIGHT_CLASSES, FlightClass } from './airline.model';
+import { FLIGHT_CLASSES, FlightClass } from '../../../shared/flight-classes';
+import { Airline } from './airline.model';
 
 /** The form's shape. Number fields are null while the input is empty. */
 export interface AirlineFormValue {
