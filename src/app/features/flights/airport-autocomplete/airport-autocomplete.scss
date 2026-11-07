@@ -1,0 +1,26 @@
+:host {
+  display: block;
+}
+
+.field {
+  width: 100%;
+}
+
+.spinner {
+  margin-inline-end: 12px;
+}
+
+.error {
+  color: var(--mat-sys-error);
+}
+
+.option {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+
+.option-subtitle {
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}

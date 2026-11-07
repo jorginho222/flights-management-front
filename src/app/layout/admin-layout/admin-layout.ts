@@ -30,6 +30,7 @@ export class AdminLayout {
   protected readonly menuItems = [
     { path: '/airlines', icon: 'flight', labelKey: 'menu.airlines' },
     { path: '/airplanes', icon: 'airplanemode_active', labelKey: 'menu.airplanes' },
+    { path: '/flights', icon: 'flight_takeoff', labelKey: 'menu.flights' },
   ] as const;
 
   protected readonly isHandset = toSignal(

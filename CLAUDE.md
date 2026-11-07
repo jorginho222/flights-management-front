@@ -46,6 +46,9 @@ docker run -e API_URL=http://localhost:3000 -p 8080:8080 flights-front
 - Each `rxMethod`'s flattening operator is deliberate: `switchMap` for reads, `exhaustMap` for save (blocks double submits), `concatMap` for delete.
 - A store is provided on its feature route, so the list and form share one instance. That instance outlives the screens, so a form must reset its session on open (`loadOne`/`resetForm`). Move a store to root only when another feature needs it.
 - A `MatDialog` component that uses a feature store must be opened with `injector: this.injector` from the opening component (see `AirlineList.openImport`). Otherwise it gets the root injector, which can't see route-provided stores.
+- Flights is search-only so far. `FlightsStore` pages on the server and keeps the last submitted filters, so reopening the screen restores the search. It loads the airline filter's options through `AirlinesApi` rather than moving `AirlinesStore` to root.
+- `AirportAutocomplete` provides its own `AirportSearchStore`, so each airport field has separate suggestions. Its control holds the picked `Airport` or null, but holds the typed text while the user types, so check values with `isAirport`.
+- Material labels for the paginator and datepicker go through Transloco (`TranslatedPaginatorIntl`, `TranslatedDatepickerIntl`). `provideNativeDateAdapter()` is on the flights route.
 - There is deliberately no generic CRUD store. Extract shared parts only once a second resource shows what's really common. So far that is `shared/flight-classes.ts`, the validators in `shared/forms/validators.ts`, the import types and `toImportError` in `core/http/spreadsheet-import.ts`, and the `flightClasses` and `import` translation blocks.
 
 **API format.** The API has no global prefix and no response envelope.
@@ -79,6 +82,8 @@ These can go out of date, so check `../flights-management/src/airlines/airlines.
 - Airplane models are unique (409). `passengersCapacity` must equal the seats in `seatsConfig`, so `AirplaneForm` computes it instead of offering a field. Each class appears at most once, with 1–100 rows and 1–26 columns.
 - Airplanes also have `PUT /airplanes/:id/upload-file` and `PUT /airplanes/:id/delete-file` for an image (`imageUrl`). The panel doesn't use them yet. A save leaves `imageUrl` out of the body, so the stored image is kept.
 - The airplane import has `brand`, `model`, `passengersCapacity` and a `<class>Rows`/`<class>Columns` pair per class, left blank when the airplane lacks that class.
+- Flights search is `QUERY /flights`, with a JSON `SearchFlightsDto` body (`origin`/`destination` IATA codes, `departureFrom`/`departureTo` ISO dates, both inclusive, `status`, `airlineCode`, `page`, `limit` ≤ 100). It needs `Content-Type: application/json`, or it returns 415. It returns `{ items, meta: { page, limit, totalItems, totalPages } }` (`core/http/paginated-result.ts`), sorted by departure. Each item includes its airline and airports.
+- `GET /airports?search=&limit=` is a typeahead with no paging. `search` needs at least 3 characters (400 otherwise), and `limit` is at most 50. Results are ranked with an exact IATA code first, then code, name and city prefixes.
 - The API only accepts browser requests from the origins in its `CORS_ORIGINS` variable, which defaults to `http://localhost:4200`.
 - The API has no authentication, so neither does the panel.
 - Many backend not-found cases surface as HTTP 500, not 404. Code that branches on status has to allow for this.
