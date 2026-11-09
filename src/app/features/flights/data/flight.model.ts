@@ -55,6 +55,24 @@ export interface Flight {
   version: number;
 }
 
+/** The data of a `flight.updated` event from `GET /flights/events`, sent after a status or schedule change. */
+export type FlightUpdate = Pick<Flight, 'id' | 'status' | 'departure' | 'arrival' | 'version'>;
+
+/**
+ * What `FlightsApi.updates` emits. `connected` comes on every open, with `reconnect` set after
+ * a dropped connection: events sent while it was down are lost, so the shown data may be stale.
+ */
+export type FlightLiveEvent =
+  | { type: 'updated'; flight: FlightUpdate }
+  | { type: 'connected'; reconnect: boolean }
+  | { type: 'disconnected' };
+
+/**
+ * The live connection as the list shows it. `off` when no screen is watching, or after the
+ * browser gave up on the stream (such as an error response, which `EventSource` doesn't retry).
+ */
+export type FlightLiveState = 'off' | 'connecting' | 'connected' | 'reconnecting';
+
 /** The body of `QUERY /flights` (the API's `SearchFlightsDto`). */
 export interface FlightSearchCriteria {
   /** IATA code. */

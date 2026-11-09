@@ -237,7 +237,17 @@
     "list": {
       "loadError": "Couldn't load flights.",
       "empty": "No flights match these filters.",
-      "edit": "Edit flight {{code}}"
+      "edit": "Edit flight {{code}}",
+      "live": {
+        "connecting": "Connecting to live updates…",
+        "connected": "Status and schedule changes appear as they happen",
+        "reconnecting": "Live updates paused. Reconnecting…"
+      },
+      "liveBadge": {
+        "connecting": "Connecting…",
+        "connected": "Live",
+        "reconnecting": "Reconnecting…"
+      }
     },
     "form": {
       "title": "New flight",
