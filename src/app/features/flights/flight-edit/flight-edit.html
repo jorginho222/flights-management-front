@@ -1,0 +1,119 @@
+<a matButton routerLink="/flights" class="back">
+  <mat-icon>arrow_back</mat-icon>
+  {{ 'flights.edit.back' | transloco }}
+</a>
+
+@if (store.selectedMissing()) {
+  <div class="state" role="alert">
+    <p>{{ 'flights.edit.notLoaded' | transloco }}</p>
+    <a matButton="outlined" routerLink="/flights">{{ 'flights.edit.backToList' | transloco }}</a>
+  </div>
+} @else if (store.selected(); as flight) {
+  <h1 class="title">{{ 'flights.edit.title' | transloco: { code: code() } }}</h1>
+
+  <mat-tab-group
+    mat-stretch-tabs="false"
+    [selectedIndex]="tab()"
+    (selectedIndexChange)="tab.set($event)"
+  >
+    <mat-tab [label]="'flights.edit.tabs.details' | transloco">
+      <form class="tab" [formGroup]="detailsForm" novalidate (ngSubmit)="saveDetails()">
+        @if (detailsLocked()) {
+          <p class="note" role="status">
+            {{
+              'flights.edit.detailsLocked'
+                | transloco: { status: ('flightStatus.' + flight.status | transloco) }
+            }}
+          </p>
+        } @else {
+          <p class="help">{{ 'flights.edit.airlineCodeHint' | transloco }}</p>
+        }
+
+        <app-flight-details-fields [group]="detailsForm" />
+
+        @if (store.saveErrors().details; as error) {
+          <div class="save-error" role="alert">
+            @for (message of error.messages; track message) {
+              <p>{{ message }}</p>
+            } @empty {
+              <p>{{ 'errors.generic' | transloco }}</p>
+            }
+          </div>
+        }
+
+        <div class="form-actions">
+          <button
+            matButton="filled"
+            type="submit"
+            [disabled]="detailsLocked() || !detailsDirty() || store.saving().details"
+          >
+            {{ 'common.save' | transloco }}
+          </button>
+        </div>
+      </form>
+    </mat-tab>
+
+    <mat-tab [label]="'flights.edit.tabs.schedule' | transloco">
+      <form class="tab" [formGroup]="scheduleForm" novalidate (ngSubmit)="saveSchedule()">
+        <p class="note">{{ 'flights.edit.scheduleSaveHint' | transloco }}</p>
+
+        <app-flight-schedule-fields [group]="scheduleForm" />
+
+        @if (store.saveErrors().schedule; as error) {
+          <div class="save-error" role="alert">
+            @for (message of error.messages; track message) {
+              <p>{{ message }}</p>
+            } @empty {
+              <p>{{ 'errors.generic' | transloco }}</p>
+            }
+          </div>
+        }
+
+        <div class="form-actions">
+          <button
+            matButton="filled"
+            type="submit"
+            [disabled]="!scheduleDirty() || store.saving().schedule"
+          >
+            {{ 'common.save' | transloco }}
+          </button>
+        </div>
+      </form>
+    </mat-tab>
+
+    <mat-tab [label]="'flights.edit.tabs.status' | transloco">
+      <form class="tab" [formGroup]="statusForm" novalidate (ngSubmit)="saveStatus()">
+        <div class="fields">
+          <mat-form-field>
+            <mat-label>{{ 'flights.edit.fields.status' | transloco }}</mat-label>
+            <mat-select formControlName="status">
+              @for (status of statuses; track status) {
+                <mat-option [value]="status">{{ 'flightStatus.' + status | transloco }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        @if (store.saveErrors().status; as error) {
+          <div class="save-error" role="alert">
+            @for (message of error.messages; track message) {
+              <p>{{ message }}</p>
+            } @empty {
+              <p>{{ 'errors.generic' | transloco }}</p>
+            }
+          </div>
+        }
+
+        <div class="form-actions">
+          <button
+            matButton="filled"
+            type="submit"
+            [disabled]="!statusDirty() || store.saving().status"
+          >
+            {{ 'common.save' | transloco }}
+          </button>
+        </div>
+      </form>
+    </mat-tab>
+  </mat-tab-group>
+}

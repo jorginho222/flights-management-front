@@ -1,0 +1,51 @@
+<mat-form-field class="field">
+  <mat-label>{{ labelKey() | transloco }}</mat-label>
+  <input
+    matInput
+    type="text"
+    autocomplete="off"
+    [formControl]="control()"
+    [matAutocomplete]="auto"
+    (input)="store.search(text.value)"
+    #text
+  />
+  @if (store.loading()) {
+    <mat-spinner matSuffix diameter="20" class="spinner" />
+  } @else if (hasValue()) {
+    <button
+      matIconButton
+      matSuffix
+      type="button"
+      [attr.aria-label]="'flights.airport.clear' | transloco: { label: (labelKey() | transloco) }"
+      (click)="clear()"
+    >
+      <mat-icon>close</mat-icon>
+    </button>
+  }
+  @if (store.error()) {
+    <mat-hint class="error">{{ 'flights.airport.loadError' | transloco }}</mat-hint>
+  } @else {
+    <mat-hint>{{ 'flights.airport.hint' | transloco: { min: minLength } }}</mat-hint>
+  }
+
+  <mat-autocomplete
+    #auto="matAutocomplete"
+    requireSelection
+    autoActiveFirstOption
+    [displayWith]="display"
+  >
+    @for (airport of store.options(); track airport.id) {
+      <mat-option [value]="airport">
+        <span class="option">
+          <span class="option-title"
+            ><strong>{{ airport.iataCode }}</strong> {{ airport.name }}</span
+          >
+          <span class="option-subtitle">{{ subtitle(airport) }}</span>
+        </span>
+      </mat-option>
+    }
+    @if (noMatches()) {
+      <mat-option disabled>{{ 'flights.airport.noMatches' | transloco }}</mat-option>
+    }
+  </mat-autocomplete>
+</mat-form-field>

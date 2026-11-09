@@ -1,0 +1,37 @@
+// Page chrome shared by the create and edit screens; the fields style themselves
+
+.back {
+  margin-bottom: 8px;
+}
+
+.title {
+  margin: 0 0 16px;
+  font: var(--mat-sys-headline-small);
+}
+
+section {
+  margin-bottom: 8px;
+
+  h2 {
+    margin: 0 0 12px;
+    font: var(--mat-sys-title-medium);
+  }
+}
+
+.save-error {
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border-radius: var(--mat-sys-corner-small);
+  background-color: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+
+  p {
+    margin: 0;
+  }
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

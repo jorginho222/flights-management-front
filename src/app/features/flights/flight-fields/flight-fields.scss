@@ -1,0 +1,94 @@
+:host {
+  display: block;
+}
+
+section {
+  margin-bottom: 8px;
+
+  h2 {
+    margin: 0 0 12px;
+    font: var(--mat-sys-title-medium);
+  }
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));
+  column-gap: 16px;
+  row-gap: 4px;
+}
+
+// Two fields per line spanning the width, like the route: airline and airplane,
+// departure date and time, arrival date and time
+.pair {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  @media (max-width: 599.98px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+mat-form-field {
+  width: 100%;
+}
+
+// Hour, minute and AM/PM side by side in the time half of the row
+.time {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: 8px;
+  align-items: start;
+}
+
+// Sits where the selects' own error text would, without adding to the row height
+.time-error {
+  grid-column: 1 / -1;
+  margin: -20px 0 4px 16px;
+}
+
+.error {
+  color: var(--mat-sys-error);
+}
+
+.retry {
+  margin-bottom: 16px;
+}
+
+.help {
+  margin: 0 0 12px;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+// Origin ⇄ destination share a row; the swap button sits level with the inputs
+.route {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+
+  .airport {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .swap {
+    margin-top: 8px;
+  }
+
+  @media (max-width: 599.98px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+
+    .swap {
+      align-self: center;
+      margin: -8px 0 0;
+      transform: rotate(90deg);
+    }
+  }
+}
+
+.field-error {
+  margin: 0 0 12px;
+  color: var(--mat-sys-error);
+  font: var(--mat-sys-body-small);
+}

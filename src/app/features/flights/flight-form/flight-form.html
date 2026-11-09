@@ -1,0 +1,32 @@
+<a matButton routerLink="/flights" class="back">
+  <mat-icon>arrow_back</mat-icon>
+  {{ 'flights.form.back' | transloco }}
+</a>
+
+<h1 class="title">{{ 'flights.form.title' | transloco }}</h1>
+
+<form [formGroup]="form" novalidate (ngSubmit)="submit()">
+  <app-flight-details-fields [group]="form.controls.details" />
+
+  <section>
+    <h2>{{ 'flights.form.sections.schedule' | transloco }}</h2>
+    <app-flight-schedule-fields [group]="form.controls.schedule" />
+  </section>
+
+  @if (store.saveErrors().create; as error) {
+    <div class="save-error" role="alert">
+      @for (message of error.messages; track message) {
+        <p>{{ message }}</p>
+      } @empty {
+        <p>{{ 'errors.generic' | transloco }}</p>
+      }
+    </div>
+  }
+
+  <div class="form-actions">
+    <a matButton routerLink="/flights">{{ 'common.cancel' | transloco }}</a>
+    <button matButton="filled" type="submit" [disabled]="store.saving().create">
+      {{ 'common.save' | transloco }}
+    </button>
+  </div>
+</form>

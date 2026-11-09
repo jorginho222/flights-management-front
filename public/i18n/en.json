@@ -5,7 +5,8 @@
   },
   "menu": {
     "airlines": "Airlines",
-    "airplanes": "Airplanes"
+    "airplanes": "Airplanes",
+    "flights": "Flights"
   },
   "common": {
     "cancel": "Cancel",
@@ -159,6 +160,140 @@
       "title": "Import airplanes",
       "help": "Upload an Excel (.xlsx) file with one airplane per row. Leave both columns of a class blank when the airplane doesn't have it. If any row is invalid, nothing is imported.",
       "success": "Airplanes imported: {{count}}"
+    }
+  },
+  "datepicker": {
+    "calendar": "Calendar",
+    "openCalendar": "Open calendar",
+    "closeCalendar": "Close calendar",
+    "prevMonth": "Previous month",
+    "nextMonth": "Next month",
+    "prevYear": "Previous year",
+    "nextYear": "Next year",
+    "prevMultiYear": "Previous 24 years",
+    "nextMultiYear": "Next 24 years",
+    "switchToMonthView": "Choose date",
+    "switchToMultiYearView": "Choose month and year",
+    "startDate": "Start date",
+    "endDate": "End date"
+  },
+  "flightStatus": {
+    "scheduled": "Scheduled",
+    "checkInOpen": "Check-in open",
+    "checkInClosed": "Check-in closed",
+    "onTime": "On time",
+    "advanced": "Advanced",
+    "delayed": "Delayed",
+    "gateChanged": "Gate changed",
+    "boarding": "Boarding",
+    "finalCall": "Final call",
+    "gateClosed": "Gate closed",
+    "departed": "Departed",
+    "inAir": "In the air",
+    "diverted": "Diverted",
+    "landed": "Landed",
+    "arrived": "Arrived",
+    "cancelled": "Cancelled",
+    "unknown": "Unknown"
+  },
+  "flights": {
+    "title": "Flights",
+    "new": "New flight",
+    "filters": {
+      "title": "Search flights",
+      "origin": "Origin",
+      "destination": "Destination",
+      "swap": "Swap origin and destination",
+      "departure": "Departure",
+      "departureFrom": "From",
+      "departureTo": "To",
+      "dateHint": "MM/DD/YYYY – MM/DD/YYYY",
+      "invalidDates": "Enter valid dates, with the start before the end",
+      "status": "Status",
+      "anyStatus": "Any status",
+      "airline": "Airline",
+      "anyAirline": "Any airline",
+      "airlinesError": "Couldn't load airlines",
+      "search": "Search",
+      "clear": "Clear"
+    },
+    "airport": {
+      "hint": "Type at least {{min}} characters",
+      "noMatches": "No airports match",
+      "loadError": "Couldn't search airports. Keep typing to try again.",
+      "clear": "Clear {{label}}"
+    },
+    "columns": {
+      "code": "Code",
+      "origin": "Origin",
+      "destination": "Destination",
+      "departure": "Departure",
+      "arrival": "Arrival",
+      "airline": "Airline",
+      "status": "Status",
+      "basePrice": "Base price",
+      "actions": "Actions"
+    },
+    "list": {
+      "loadError": "Couldn't load flights.",
+      "empty": "No flights match these filters.",
+      "edit": "Edit flight {{code}}"
+    },
+    "form": {
+      "title": "New flight",
+      "back": "Back to flights",
+      "created": "Flight {{code}} was created.",
+      "sections": {
+        "route": "Route",
+        "schedule": "Schedule",
+        "operation": "Airline and airplane",
+        "price": "Price"
+      },
+      "scheduleHint": "Times are in your local time zone.",
+      "fields": {
+        "airline": "Airline",
+        "airplane": "Airplane",
+        "origin": "Origin",
+        "destination": "Destination",
+        "departureDate": "Departure date",
+        "departureTime": "Departure time",
+        "arrivalDate": "Arrival date",
+        "arrivalTime": "Arrival time",
+        "hour": "Hour",
+        "minute": "Minute",
+        "period": "AM/PM",
+        "basePrice": "Base price"
+      },
+      "dateHint": "MM/DD/YYYY",
+      "invalidDate": "Enter a valid date",
+      "sameAirports": "Origin and destination must be different.",
+      "arrivalBeforeDeparture": "Arrival must be after departure.",
+      "airplaneOption": "{{name}} · {{capacity}} seats",
+      "airlinesError": "Couldn't load airlines.",
+      "airplanesError": "Couldn't load airplanes.",
+      "periods": {
+        "AM": "AM",
+        "PM": "PM"
+      },
+      "timeRequired": "Choose the hour, minute and AM or PM."
+    },
+    "edit": {
+      "title": "Edit flight {{code}}",
+      "back": "Back to flights",
+      "notLoaded": "This flight isn't loaded, for example after a page reload. Open it again from the flights list.",
+      "backToList": "Go to flights",
+      "tabs": {
+        "details": "Airline, airplane, route and price",
+        "schedule": "Schedule",
+        "status": "Status"
+      },
+      "updated": "Flight {{code}} was updated.",
+      "airlineCodeHint": "Changing the airline gives the flight a new code.",
+      "detailsLocked": "Only scheduled flights can change these details, and this flight is {{status}}.",
+      "scheduleSaveHint": "Saving a new schedule marks the flight Advanced if it departs earlier, or Delayed otherwise. After that its airline, airplane, route and price can no longer change.",
+      "fields": {
+        "status": "Status"
+      }
     }
   }
 }

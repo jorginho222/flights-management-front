@@ -6,6 +6,7 @@ import {
   provideAppInitializer,
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
+import { MatDatepickerIntl } from '@angular/material/datepicker';
 import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 import { MAT_ICON_DEFAULT_OPTIONS } from '@angular/material/icon';
 import { MatPaginatorIntl } from '@angular/material/paginator';
@@ -14,6 +15,7 @@ import { provideTransloco, TranslocoService } from '@jsverse/transloco';
 import { firstValueFrom, forkJoin } from 'rxjs';
 import { routes } from './app.routes';
 import { AppConfigService } from './core/config/app-config';
+import { TranslatedDatepickerIntl } from './core/i18n/translated-datepicker-intl';
 import { TranslatedPaginatorIntl } from './core/i18n/translated-paginator-intl';
 import { TranslocoHttpLoader } from './core/i18n/transloco-loader';
 
@@ -39,6 +41,7 @@ export const appConfig: ApplicationConfig = {
       ),
     ),
     { provide: MatPaginatorIntl, useClass: TranslatedPaginatorIntl },
+    { provide: MatDatepickerIntl, useClass: TranslatedDatepickerIntl },
     { provide: MAT_ICON_DEFAULT_OPTIONS, useValue: { fontSet: 'material-symbols-outlined' } },
     { provide: MAT_FORM_FIELD_DEFAULT_OPTIONS, useValue: { appearance: 'outline' } },
   ],
