@@ -9,6 +9,7 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
+import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { AirportAutocomplete } from '../airport-autocomplete/airport-autocomplete';
 import { Airport } from '../data/airport.model';
@@ -43,6 +44,7 @@ const STATUS_TONES: Partial<Record<FlightStatus, StatusTone>> = {
     MatSelectModule,
     MatTableModule,
     ReactiveFormsModule,
+    RouterLink,
     TranslocoPipe,
   ],
   templateUrl: './flight-list.html',

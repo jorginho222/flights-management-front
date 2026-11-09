@@ -198,6 +198,7 @@
   },
   "flights": {
     "title": "Flights",
+    "new": "New flight",
     "filters": {
       "title": "Search flights",
       "origin": "Origin",
@@ -235,6 +236,44 @@
     "list": {
       "loadError": "Couldn't load flights.",
       "empty": "No flights match these filters."
+    },
+    "form": {
+      "title": "New flight",
+      "back": "Back to flights",
+      "created": "Flight {{code}} was created.",
+      "sections": {
+        "route": "Route",
+        "schedule": "Schedule",
+        "operation": "Airline and airplane",
+        "price": "Price"
+      },
+      "scheduleHint": "Times are in your local time zone.",
+      "fields": {
+        "airline": "Airline",
+        "airplane": "Airplane",
+        "origin": "Origin",
+        "destination": "Destination",
+        "departureDate": "Departure date",
+        "departureTime": "Departure time",
+        "arrivalDate": "Arrival date",
+        "arrivalTime": "Arrival time",
+        "hour": "Hour",
+        "minute": "Minute",
+        "period": "AM/PM",
+        "basePrice": "Base price"
+      },
+      "dateHint": "MM/DD/YYYY",
+      "invalidDate": "Enter a valid date",
+      "sameAirports": "Origin and destination must be different.",
+      "arrivalBeforeDeparture": "Arrival must be after departure.",
+      "airplaneOption": "{{name}} · {{capacity}} seats",
+      "airlinesError": "Couldn't load airlines.",
+      "airplanesError": "Couldn't load airplanes.",
+      "periods": {
+        "AM": "AM",
+        "PM": "PM"
+      },
+      "timeRequired": "Choose the hour, minute and AM or PM."
     }
   }
 }

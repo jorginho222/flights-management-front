@@ -7,10 +7,16 @@ export function airportFixture(overrides: Partial<Airport> = {}): Airport {
   return {
     id: '11111111-1111-4111-8111-111111111111',
     iataCode: 'EZE',
+    icaoCode: 'SAEZ',
     name: 'Ministro Pistarini International Airport',
     city: 'Ezeiza',
     countryCode: 'AR',
     countryName: 'Argentina',
+    continent: 'SA',
+    latitude: -34.8222,
+    longitude: -58.5358,
+    elevationFt: 67,
+    type: 'large_airport',
     ...overrides,
   };
 }
@@ -19,10 +25,15 @@ export const ezeiza = airportFixture();
 export const heathrow = airportFixture({
   id: '22222222-2222-4222-8222-222222222222',
   iataCode: 'LHR',
+  icaoCode: 'EGLL',
   name: 'London Heathrow Airport',
   city: 'London',
   countryCode: 'GB',
   countryName: 'United Kingdom',
+  continent: 'EU',
+  latitude: 51.4706,
+  longitude: -0.461941,
+  elevationFt: 83,
 });
 
 export function flightFixture(overrides: Partial<Flight> = {}): Flight {

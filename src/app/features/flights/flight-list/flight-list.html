@@ -1,5 +1,9 @@
 <header class="header">
   <h1>{{ 'flights.title' | transloco }}</h1>
+  <a matButton="filled" routerLink="new">
+    <mat-icon>add</mat-icon>
+    {{ 'flights.new' | transloco }}
+  </a>
 </header>
 
 <form class="filters" [formGroup]="form" (ngSubmit)="submit()">

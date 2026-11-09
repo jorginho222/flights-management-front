@@ -1,11 +1,13 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNativeDateAdapter } from '@angular/material/core';
+import { provideRouter } from '@angular/router';
 import { Observable, of, throwError } from 'rxjs';
 import { translocoTesting } from '../../../core/i18n/transloco-testing';
 import { PaginatedResult } from '../../../core/http/paginated-result';
 import { AirlinesApi } from '../../airlines/data/airlines-api';
 import { airlineFixture } from '../../airlines/testing/airline.fixture';
+import { AirplanesApi } from '../../airplanes/data/airplanes-api';
 import { AirportsApi } from '../data/airports-api';
 import { Flight } from '../data/flight.model';
 import { FlightsApi } from '../data/flights-api';
@@ -52,11 +54,13 @@ describe('FlightList', () => {
     TestBed.configureTestingModule({
       imports: [FlightList, translocoTesting()],
       providers: [
+        provideRouter([]),
         FlightsStore,
         provideNativeDateAdapter(),
         { provide: FlightsApi, useValue: api },
         { provide: AirlinesApi, useValue: { list: () => of([airlineFixture()]) } },
         { provide: AirportsApi, useValue: { search: () => of([]) } },
+        { provide: AirplanesApi, useValue: { list: () => of([]) } },
       ],
     });
   });
@@ -69,6 +73,14 @@ describe('FlightList', () => {
       page: 1,
       limit: 20,
     });
+  });
+
+  it('links to the create form', async () => {
+    const { el } = await render();
+    const link = Array.from(el.querySelectorAll('a')).find((a) =>
+      a.textContent?.includes('New flight'),
+    );
+    expect(link?.getAttribute('href')).toBe('/new');
   });
 
   it('shows code, route, airline, translated status and price', async () => {

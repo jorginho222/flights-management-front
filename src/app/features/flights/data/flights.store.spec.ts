@@ -5,17 +5,23 @@ import { PaginatedResult } from '../../../core/http/paginated-result';
 import { Airline } from '../../airlines/data/airline.model';
 import { AirlinesApi } from '../../airlines/data/airlines-api';
 import { airlineFixture } from '../../airlines/testing/airline.fixture';
-import { ezeiza, flightFixture, pageOf } from '../testing/flight.fixture';
+import { Airplane } from '../../airplanes/data/airplane.model';
+import { AirplanesApi } from '../../airplanes/data/airplanes-api';
+import { airplaneFixture } from '../../airplanes/testing/airplane.fixture';
+import { ezeiza, flightFixture, heathrow, pageOf } from '../testing/flight.fixture';
 import { emptyFilters } from './flight-search.mapper';
-import { Flight } from './flight.model';
+import { CreateFlightInput, Flight } from './flight.model';
 import { FlightsApi } from './flights-api';
 import { FlightsStore } from './flights.store';
 
 describe('FlightsStore', () => {
   let responses: Subject<PaginatedResult<Flight>>[];
   let airlines$: Subject<Airline[]>;
-  let api: { search: ReturnType<typeof vi.fn> };
+  let airplanes$: Subject<Airplane[]>;
+  let created: Subject<Flight>[];
+  let api: { search: ReturnType<typeof vi.fn>; create: ReturnType<typeof vi.fn> };
   let airlinesApi: { list: ReturnType<typeof vi.fn> };
+  let airplanesApi: { list: ReturnType<typeof vi.fn> };
   let store: InstanceType<typeof FlightsStore>;
 
   const filters = { ...emptyFilters(), origin: ezeiza };
@@ -24,7 +30,14 @@ describe('FlightsStore', () => {
   beforeEach(() => {
     responses = [];
     airlines$ = new Subject();
+    airplanes$ = new Subject();
+    created = [];
     api = {
+      create: vi.fn(() => {
+        const response = new Subject<Flight>();
+        created.push(response);
+        return response;
+      }),
       search: vi.fn(() => {
         const response = new Subject<PaginatedResult<Flight>>();
         responses.push(response);
@@ -32,11 +45,13 @@ describe('FlightsStore', () => {
       }),
     };
     airlinesApi = { list: vi.fn(() => airlines$) };
+    airplanesApi = { list: vi.fn(() => airplanes$) };
     TestBed.configureTestingModule({
       providers: [
         FlightsStore,
         { provide: FlightsApi, useValue: api },
         { provide: AirlinesApi, useValue: airlinesApi },
+        { provide: AirplanesApi, useValue: airplanesApi },
       ],
     });
     store = TestBed.inject(FlightsStore);
@@ -113,5 +128,71 @@ describe('FlightsStore', () => {
     airlines$.next([airlineFixture()]);
     expect(store.airlines()).toEqual([airlineFixture()]);
     expect(store.airlinesLoading()).toBe(false);
+  });
+
+  it('loads the airplanes for the create form', () => {
+    store.loadAirplanes();
+    expect(store.airplanesLoading()).toBe(true);
+    airplanes$.error(new HttpErrorResponse({ status: 500 }));
+    expect(store.airplanesLoading()).toBe(false);
+    expect(store.airplanesError()?.status).toBe(500);
+
+    airplanes$ = new Subject();
+    store.loadAirplanes();
+    expect(store.airplanesError()).toBeNull();
+    airplanes$.next([airplaneFixture()]);
+    expect(store.airplanes()).toEqual([airplaneFixture()]);
+  });
+
+  describe('create', () => {
+    const input: CreateFlightInput = {
+      id: '44444444-4444-4444-8444-444444444444',
+      airline: airlineFixture(),
+      airplane: airplaneFixture(),
+      origin: ezeiza,
+      destination: heathrow,
+      departure: '2026-12-01T13:30:00.000Z',
+      arrival: '2026-12-02T03:15:00.000Z',
+      basePrice: 850.5,
+    };
+
+    it('posts the flight and hands the saved one to onSuccess, leaving the shown page alone', () => {
+      const onSuccess = vi.fn();
+      store.create({ flight: input, onSuccess });
+      expect(store.saving()).toBe(true);
+      expect(api.create).toHaveBeenCalledExactlyOnceWith(input);
+
+      const saved = flightFixture({ id: input.id });
+      created[0].next(saved);
+      expect(store.saving()).toBe(false);
+      expect(onSuccess).toHaveBeenCalledExactlyOnceWith(saved);
+      expect(store.entities()).toEqual([]);
+    });
+
+    it('ignores a second submit while the first is saving', () => {
+      store.create({ flight: input, onSuccess: vi.fn() });
+      store.create({ flight: input, onSuccess: vi.fn() });
+      expect(api.create).toHaveBeenCalledTimes(1);
+    });
+
+    it('keeps the API messages on error, and resetForm clears them', () => {
+      const onSuccess = vi.fn();
+      store.create({ flight: input, onSuccess });
+      created[0].error(
+        new HttpErrorResponse({
+          status: 400,
+          error: { message: 'Origin and destination must be different' },
+        }),
+      );
+      expect(store.saving()).toBe(false);
+      expect(store.saveError()).toEqual({
+        status: 400,
+        messages: ['Origin and destination must be different'],
+      });
+      expect(onSuccess).not.toHaveBeenCalled();
+
+      store.resetForm();
+      expect(store.saveError()).toBeNull();
+    });
   });
 });

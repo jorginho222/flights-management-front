@@ -37,6 +37,21 @@ describe('FlightsApi and AirportsApi', () => {
     expect(response).toEqual(result);
   });
 
+  it('creates a flight with POST and returns the saved flight', () => {
+    const saved = flightFixture();
+    const body = { id: saved.id, basePrice: 10 } as never;
+    let response: unknown;
+    TestBed.inject(FlightsApi)
+      .create(body)
+      .subscribe((value) => (response = value));
+
+    const request = http.expectOne('http://api.test/flights');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toBe(body);
+    request.flush(saved, { status: 201, statusText: 'Created' });
+    expect(response).toEqual(saved);
+  });
+
   it('searches airports by text with a limit', () => {
     TestBed.inject(AirportsApi).search('eze', 15).subscribe();
 

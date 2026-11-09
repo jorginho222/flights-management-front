@@ -12,6 +12,10 @@ export const FLIGHTS_ROUTES: Routes = [
         pathMatch: 'full',
         loadComponent: () => import('./flight-list/flight-list').then((m) => m.FlightList),
       },
+      {
+        path: 'new',
+        loadComponent: () => import('./flight-form/flight-form').then((m) => m.FlightForm),
+      },
     ],
   },
 ];

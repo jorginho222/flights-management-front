@@ -3,7 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { AppConfigService } from '../../../core/config/app-config';
 import { PaginatedResult } from '../../../core/http/paginated-result';
-import { Flight, FlightSearchCriteria } from './flight.model';
+import { CreateFlightInput, Flight, FlightSearchCriteria } from './flight.model';
 
 @Injectable({ providedIn: 'root' })
 export class FlightsApi {
@@ -20,5 +20,10 @@ export class FlightsApi {
    */
   search(criteria: FlightSearchCriteria): Observable<PaginatedResult<Flight>> {
     return this.http.request<PaginatedResult<Flight>>('QUERY', this.baseUrl, { body: criteria });
+  }
+
+  /** Returns the saved flight, with the code the API assigned. */
+  create(flight: CreateFlightInput): Observable<Flight> {
+    return this.http.post<Flight>(this.baseUrl, flight);
   }
 }
