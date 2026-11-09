@@ -114,6 +114,79 @@
   }
 }
 
+// Live updates are green throughout. Material's palettes have no green, so it's set here.
+:host {
+  --live-green: light-dark(#188038, #81c995);
+  --live-green-soft: light-dark(#ceead6, #0f5223);
+}
+
+// Headers sit on one baseline, so names line up whether or not a badge is above them
+th[mat-header-cell] {
+  vertical-align: bottom;
+  padding-top: 8px;
+  padding-bottom: 14px;
+}
+
+// The badge above a live column's name: a still dot, then its label
+.live {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  margin-bottom: 2px;
+  font: var(--mat-sys-label-small);
+  color: var(--live-green);
+  white-space: nowrap;
+  cursor: help;
+
+  &[data-state='reconnecting'] {
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.live-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+// A value that changed while shown flashes green once, then fades back
+.live-value {
+  display: inline-block;
+  margin: -2px -6px;
+  padding: 2px 6px;
+  border-radius: 6px;
+
+  &.changed {
+    animation: value-changed 2.4s ease-out;
+  }
+}
+
+@keyframes value-changed {
+  0%,
+  30% {
+    background: var(--live-green-soft);
+    color: var(--live-green);
+  }
+}
+
+// The status chip keeps its tone colours and gets a green ring instead
+.status.changed {
+  animation: status-changed 2.4s ease-out;
+}
+
+@keyframes status-changed {
+  0%,
+  30% {
+    box-shadow: 0 0 0 3px var(--live-green);
+  }
+  100% {
+    box-shadow: 0 0 0 3px transparent;
+  }
+}
+
 @media (max-width: 599px) {
   .route {
     flex-direction: column;

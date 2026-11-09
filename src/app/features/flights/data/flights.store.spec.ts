@@ -1,4 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { Injector } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Subject } from 'rxjs';
 import { PaginatedResult } from '../../../core/http/paginated-result';
@@ -10,7 +11,7 @@ import { AirplanesApi } from '../../airplanes/data/airplanes-api';
 import { airplaneFixture } from '../../airplanes/testing/airplane.fixture';
 import { ezeiza, flightFixture, heathrow, pageOf } from '../testing/flight.fixture';
 import { emptyFilters } from './flight-search.mapper';
-import { CreateFlightInput, Flight } from './flight.model';
+import { CreateFlightInput, Flight, FlightLiveEvent } from './flight.model';
 import { FlightsApi } from './flights-api';
 import { FlightsStore } from './flights.store';
 
@@ -20,8 +21,9 @@ describe('FlightsStore', () => {
   let airplanes$: Subject<Airplane[]>;
   let created: Subject<Flight>[];
   let updates: Record<'details' | 'schedule' | 'status', Subject<Flight>>;
+  let live$: Subject<FlightLiveEvent>;
   let api: Record<
-    'search' | 'create' | 'update' | 'updateSchedule' | 'updateStatus',
+    'search' | 'create' | 'update' | 'updateSchedule' | 'updateStatus' | 'updates',
     ReturnType<typeof vi.fn>
   >;
   let airlinesApi: { list: ReturnType<typeof vi.fn> };
@@ -37,7 +39,9 @@ describe('FlightsStore', () => {
     airplanes$ = new Subject();
     created = [];
     updates = { details: new Subject(), schedule: new Subject(), status: new Subject() };
+    live$ = new Subject();
     api = {
+      updates: vi.fn(() => live$),
       update: vi.fn(() => updates.details),
       updateSchedule: vi.fn(() => updates.schedule),
       updateStatus: vi.fn(() => updates.status),
@@ -201,6 +205,89 @@ describe('FlightsStore', () => {
 
       store.resetForm();
       expect(store.saveErrors()).toEqual({});
+    });
+  });
+
+  it('has live updates off until a screen watches them', () => {
+    expect(store.live()).toBe('off');
+  });
+
+  describe('live updates', () => {
+    const flight = flightFixture({ version: 3 });
+    const update = (changes: Partial<Flight> = {}): FlightLiveEvent => ({
+      type: 'updated',
+      flight: {
+        id: flight.id,
+        status: 'delayed',
+        departure: '2026-12-01T15:00:00.000Z',
+        arrival: '2026-12-02T05:00:00.000Z',
+        version: 4,
+        ...changes,
+      },
+    });
+
+    beforeEach(() => {
+      store.search(filters);
+      respond(0, pageOf([flight]));
+      store.watchUpdates(TestBed.inject(Injector));
+    });
+
+    it('connects once', () => {
+      expect(api.updates).toHaveBeenCalledTimes(1);
+    });
+
+    it('patches a shown flight with a newer update', () => {
+      live$.next(update());
+      expect(store.entityMap()[flight.id]).toEqual({
+        ...flight,
+        status: 'delayed',
+        departure: '2026-12-01T15:00:00.000Z',
+        arrival: '2026-12-02T05:00:00.000Z',
+        version: 4,
+      });
+    });
+
+    it('ignores an update that is not newer, such as the echo of its own save', () => {
+      live$.next(update({ version: 3 }));
+      live$.next(update({ version: 2 }));
+      expect(store.entityMap()[flight.id]).toEqual(flight);
+    });
+
+    it('ignores a flight that is not shown', () => {
+      live$.next(update({ id: '55555555-5555-4555-8555-555555555555' }));
+      expect(store.entities()).toEqual([flight]);
+    });
+
+    it('leaves the flight open in the edit screen alone', () => {
+      store.loadOne(flight.id);
+      live$.next(update());
+      expect(store.selected()).toEqual(flight);
+      expect(store.entityMap()[flight.id].status).toBe('delayed');
+    });
+
+    it('re-runs the last search on the same page after a reconnect, not the first open', () => {
+      live$.next({ type: 'connected', reconnect: false });
+      expect(api.search).toHaveBeenCalledTimes(1);
+
+      live$.next({ type: 'connected', reconnect: true });
+      expect(api.search).toHaveBeenCalledTimes(2);
+      expect(api.search).toHaveBeenLastCalledWith({ origin: 'EZE', page: 1, limit: 20 });
+    });
+
+    it('follows the connection state for the live indicator', () => {
+      expect(store.live()).toBe('connecting');
+      live$.next({ type: 'connected', reconnect: false });
+      expect(store.live()).toBe('connected');
+      live$.next({ type: 'disconnected' });
+      expect(store.live()).toBe('reconnecting');
+      live$.next({ type: 'connected', reconnect: true });
+      expect(store.live()).toBe('connected');
+    });
+
+    it('turns live off when the stream fails, and keeps the shown flights', () => {
+      live$.error(new Error('closed'));
+      expect(store.live()).toBe('off');
+      expect(store.entities()).toEqual([flight]);
     });
   });
 

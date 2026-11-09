@@ -6,9 +6,11 @@ import { PaginatedResult } from '../../../core/http/paginated-result';
 import {
   CreateFlightInput,
   Flight,
+  FlightLiveEvent,
   FlightScheduleInput,
   FlightSearchCriteria,
   FlightStatusInput,
+  FlightUpdate,
   UpdateFlightInput,
 } from './flight.model';
 
@@ -47,5 +49,39 @@ export class FlightsApi {
   /** Returns the flight without its relations, like `updateSchedule`. */
   updateStatus(status: FlightStatusInput): Observable<Flight> {
     return this.http.patch<Flight>(`${this.baseUrl}/status`, status);
+  }
+
+  /**
+   * Live updates over Server-Sent Events. `EventSource` retries a dropped connection on its
+   * own, so an error emits `disconnected` and the next open emits `connected` with `reconnect`.
+   * It doesn't retry an error response, so that ends the observable with an error.
+   * Unsubscribing closes the connection.
+   */
+  updates(): Observable<FlightLiveEvent> {
+    return new Observable<FlightLiveEvent>((subscriber) => {
+      const source = new EventSource(`${this.baseUrl}/events`);
+      let dropped = false;
+
+      source.addEventListener('flight.updated', (event) => {
+        const flight = JSON.parse((event as MessageEvent<string>).data) as FlightUpdate;
+        subscriber.next({ type: 'updated', flight });
+      });
+      source.onopen = () => {
+        subscriber.next({ type: 'connected', reconnect: dropped });
+        dropped = false;
+      };
+      source.onerror = () => {
+        if (source.readyState === EventSource.CLOSED) {
+          subscriber.error(new Error('The flight updates stream was closed'));
+          return;
+        }
+        if (!dropped) {
+          dropped = true;
+          subscriber.next({ type: 'disconnected' });
+        }
+      };
+
+      return () => source.close();
+    });
   }
 }

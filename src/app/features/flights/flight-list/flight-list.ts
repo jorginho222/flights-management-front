@@ -1,5 +1,5 @@
-import { DatePipe, DecimalPipe } from '@angular/common';
-import { Component, inject, OnInit } from '@angular/core';
+import { DatePipe, DecimalPipe, NgTemplateOutlet } from '@angular/common';
+import { Component, effect, inject, Injector, OnInit, signal, untracked } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDatepickerModule } from '@angular/material/datepicker';
@@ -9,6 +9,7 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { AirportAutocomplete } from '../airport-autocomplete/airport-autocomplete';
@@ -18,6 +19,15 @@ import { Flight, flightCode, FLIGHT_STATUSES, FlightStatus } from '../data/fligh
 import { FlightsStore } from '../data/flights.store';
 
 type StatusTone = 'neutral' | 'success' | 'warning' | 'error';
+
+/** The columns that live updates change, each highlighted on its own. */
+type LiveField = 'status' | 'departure' | 'arrival';
+type LiveValues = Pick<Flight, LiveField>;
+
+const sameValue = (field: LiveField, a: LiveValues, b: LiveValues): boolean =>
+  field === 'status'
+    ? a.status === b.status
+    : new Date(a[field]).getTime() === new Date(b[field]).getTime();
 
 const STATUS_TONES: Partial<Record<FlightStatus, StatusTone>> = {
   advanced: 'warning',
@@ -43,6 +53,8 @@ const STATUS_TONES: Partial<Record<FlightStatus, StatusTone>> = {
     MatProgressBarModule,
     MatSelectModule,
     MatTableModule,
+    MatTooltipModule,
+    NgTemplateOutlet,
     ReactiveFormsModule,
     RouterLink,
     TranslocoPipe,
@@ -52,6 +64,7 @@ const STATUS_TONES: Partial<Record<FlightStatus, StatusTone>> = {
 })
 export class FlightList implements OnInit {
   protected readonly store = inject(FlightsStore);
+  private readonly injector = inject(Injector);
 
   protected readonly columns = [
     'code',
@@ -76,8 +89,39 @@ export class FlightList implements OnInit {
     airlineCode: new FormControl<string | null>(null),
   });
 
+  /**
+   * The fields of each flight that changed while shown, highlighted once until their
+   * animation ends. Keyed `id:field`.
+   */
+  protected readonly changed = signal<ReadonlySet<string>>(new Set());
+  private shownValues = new Map<string, LiveValues>();
+
+  constructor() {
+    // A shown flight only changes through a live update or a reload. The first results of a
+    // visit have nothing to compare with, so they never highlight.
+    effect(() => {
+      const flights = this.store.entities();
+      untracked(() => {
+        const changed = new Set(this.changed());
+        for (const flight of flights) {
+          const before = this.shownValues.get(flight.id);
+          if (!before) continue;
+          for (const field of ['status', 'departure', 'arrival'] as const) {
+            if (!sameValue(field, before, flight)) changed.add(`${flight.id}:${field}`);
+          }
+        }
+        this.shownValues = new Map(
+          flights.map(({ id, status, departure, arrival }) => [id, { status, departure, arrival }]),
+        );
+        this.changed.set(changed);
+      });
+    });
+  }
+
   ngOnInit(): void {
     this.store.loadAirlines();
+    // The store outlives this screen, so the live connection is tied to the screen instead
+    this.store.watchUpdates(this.injector);
     // The store outlives the screen: reopening it shows the last search again
     const saved = this.store.filters();
     if (saved) {
@@ -109,6 +153,16 @@ export class FlightList implements OnInit {
 
   protected onPage(event: PageEvent): void {
     this.store.goToPage(event.pageIndex + 1, event.pageSize);
+  }
+
+  protected isChanged(flight: Flight, field: LiveField): boolean {
+    return this.changed().has(`${flight.id}:${field}`);
+  }
+
+  protected highlighted(flight: Flight, field: LiveField): void {
+    const changed = new Set(this.changed());
+    changed.delete(`${flight.id}:${field}`);
+    this.changed.set(changed);
   }
 
   protected statusTone(flight: Flight): StatusTone {

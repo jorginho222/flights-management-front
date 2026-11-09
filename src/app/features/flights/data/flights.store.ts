@@ -1,9 +1,19 @@
-import { inject } from '@angular/core';
+import { inject, Injector } from '@angular/core';
 import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStore, withMethods, withState } from '@ngrx/signals';
 import { setAllEntities, updateEntity, withEntities } from '@ngrx/signals/entities';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { exhaustMap, Observable, of, pipe, switchMap, tap } from 'rxjs';
+import {
+  catchError,
+  EMPTY,
+  exhaustMap,
+  finalize,
+  Observable,
+  of,
+  pipe,
+  switchMap,
+  tap,
+} from 'rxjs';
 import { ApiError, toApiError } from '../../../core/http/api-error';
 import { PaginationMeta } from '../../../core/http/paginated-result';
 import { Airline } from '../../airlines/data/airline.model';
@@ -14,6 +24,8 @@ import { FlightSearchFilters, toSearchCriteria } from './flight-search.mapper';
 import {
   CreateFlightInput,
   Flight,
+  FlightLiveEvent,
+  FlightLiveState,
   FlightScheduleInput,
   FlightStatusInput,
   UpdateFlightInput,
@@ -43,6 +55,8 @@ interface FlightsState {
   /** Each save runs on its own, so one section saving doesn't block another. */
   saving: Partial<Record<FlightSaveSection, boolean>>;
   saveErrors: Partial<Record<FlightSaveSection, ApiError>>;
+  /** The connection behind live updates, for the list's indicator. */
+  live: FlightLiveState;
 }
 
 const initialState: FlightsState = {
@@ -62,6 +76,7 @@ const initialState: FlightsState = {
   selectedMissing: false,
   saving: {},
   saveErrors: {},
+  live: 'off',
 };
 
 interface SearchRequest {
@@ -172,6 +187,36 @@ export const FlightsStore = signalStore(
         ),
       );
 
+      const reload = (): void => {
+        const filters = store.filters();
+        if (filters) query({ filters, page: store.page(), limit: store.limit() });
+      };
+
+      /**
+       * Patches a shown row when the update is newer than it, which also drops the echo of
+       * this panel's own save. Rows are never added or removed, so paging stays put, and
+       * `selected` is left alone so an open edit form isn't overwritten.
+       */
+      const applyLiveEvent = (event: FlightLiveEvent): void => {
+        if (event.type === 'connected') {
+          patchState(store, { live: 'connected' });
+          if (event.reconnect) reload();
+          return;
+        }
+        if (event.type === 'disconnected') {
+          patchState(store, { live: 'reconnecting' });
+          return;
+        }
+        const { id, ...changes } = event.flight;
+        const shown = store.entityMap()[id];
+        if (shown && changes.version > shown.version) {
+          patchState(store, updateEntity({ id, changes }));
+        }
+      };
+
+      /** Given an observable, rxMethod ties that subscription to the caller's injector. */
+      const applyUpdates = rxMethod<FlightLiveEvent>(tap(applyLiveEvent));
+
       return {
         /** A new search starts at page 1. */
         search(filters: FlightSearchFilters): void {
@@ -185,9 +230,21 @@ export const FlightsStore = signalStore(
         },
 
         /** Re-runs the last search on the same page, such as after an error. */
-        reload(): void {
-          const filters = store.filters();
-          if (filters) query({ filters, page: store.page(), limit: store.limit() });
+        reload,
+
+        /**
+         * Keeps the shown flights current with `GET /flights/events`, and reloads the page
+         * after a reconnect. `live` follows the connection. The connection lives as long as `injector`, normally the list
+         * screen's, since the store outlives the screen.
+         */
+        watchUpdates(injector: Injector): void {
+          patchState(store, { live: 'connecting' });
+          const updates = api.updates().pipe(
+            // A closed stream only turns the indicator off; the list keeps working without it
+            catchError(() => EMPTY),
+            finalize(() => patchState(store, { live: 'off' })),
+          );
+          applyUpdates(updates, { injector });
         },
 
         loadAirlines: rxMethod<void>(

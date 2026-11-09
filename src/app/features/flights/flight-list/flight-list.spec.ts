@@ -2,21 +2,22 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { provideRouter } from '@angular/router';
-import { Observable, of, throwError } from 'rxjs';
+import { Observable, of, Subject, throwError } from 'rxjs';
 import { translocoTesting } from '../../../core/i18n/transloco-testing';
 import { PaginatedResult } from '../../../core/http/paginated-result';
 import { AirlinesApi } from '../../airlines/data/airlines-api';
 import { airlineFixture } from '../../airlines/testing/airline.fixture';
 import { AirplanesApi } from '../../airplanes/data/airplanes-api';
 import { AirportsApi } from '../data/airports-api';
-import { Flight } from '../data/flight.model';
+import { Flight, FlightLiveEvent } from '../data/flight.model';
 import { FlightsApi } from '../data/flights-api';
 import { FlightsStore } from '../data/flights.store';
 import { ezeiza, flightFixture, heathrow, pageOf } from '../testing/flight.fixture';
 import { FlightList } from './flight-list';
 
 describe('FlightList', () => {
-  let api: { search: ReturnType<typeof vi.fn> };
+  let api: { search: ReturnType<typeof vi.fn>; updates: ReturnType<typeof vi.fn> };
+  let live$: Subject<FlightLiveEvent>;
 
   async function render(
     result: Observable<PaginatedResult<Flight>> = of(pageOf([flightFixture()])),
@@ -50,7 +51,8 @@ describe('FlightList', () => {
     )!;
 
   beforeEach(() => {
-    api = { search: vi.fn() };
+    live$ = new Subject();
+    api = { search: vi.fn(), updates: vi.fn(() => live$) };
     TestBed.configureTestingModule({
       imports: [FlightList, translocoTesting()],
       providers: [
@@ -75,6 +77,106 @@ describe('FlightList', () => {
     });
   });
 
+  describe('live updates', () => {
+    const badges = (el: HTMLElement) =>
+      Array.from(el.querySelectorAll<HTMLElement>('th .live')).map((badge) => ({
+        column: badge.closest('th')!.textContent!.replace(badge.textContent!, '').trim(),
+        state: badge.dataset['state'],
+        label: badge.textContent?.trim(),
+      }));
+    const chip = (el: HTMLElement) => el.querySelector<HTMLElement>('td .status')!;
+    const dateCells = (el: HTMLElement) =>
+      Array.from(el.querySelectorAll<HTMLElement>('td .live-value'));
+    const liveUpdate = (changes: Partial<Flight>): FlightLiveEvent => {
+      const { id, departure, arrival, status, version } = flightFixture();
+      return {
+        type: 'updated',
+        flight: { id, departure, arrival, status, version: version + 1, ...changes },
+      };
+    };
+
+    it('shows a badge below departure, arrival and status that follows the connection', async () => {
+      const { fixture, el } = await render();
+      expect(badges(el)).toEqual(
+        ['Departure', 'Arrival', 'Status'].map((column) => ({
+          column,
+          state: 'connecting',
+          label: 'Connecting…',
+        })),
+      );
+
+      live$.next({ type: 'connected', reconnect: false });
+      await settle(fixture);
+      expect(badges(el).map(({ state, label }) => [state, label])).toEqual([
+        ['connected', 'Live'],
+        ['connected', 'Live'],
+        ['connected', 'Live'],
+      ]);
+
+      live$.next({ type: 'disconnected' });
+      await settle(fixture);
+      expect(badges(el)[0]).toMatchObject({ state: 'reconnecting', label: 'Reconnecting…' });
+    });
+
+    it('hides the badges when the stream fails', async () => {
+      const { fixture, el } = await render();
+      live$.error(new Error('closed'));
+      await settle(fixture);
+      expect(badges(el)).toEqual([]);
+    });
+
+    it('shows a live status change and flashes it until the animation ends', async () => {
+      const { fixture, el } = await render();
+      expect(chip(el).classList).not.toContain('changed');
+
+      live$.next(liveUpdate({ status: 'boarding' }));
+      await settle(fixture);
+      expect(rows(el)[0][6]).toBe('Boarding');
+      expect(chip(el).classList).toContain('changed');
+      expect(dateCells(el).map((cell) => cell.classList.contains('changed'))).toEqual([
+        false,
+        false,
+      ]);
+
+      chip(el).dispatchEvent(new Event('animationend'));
+      await settle(fixture);
+      expect(chip(el).classList).not.toContain('changed');
+    });
+
+    it('flashes only the departure or arrival that changed, each until its animation ends', async () => {
+      const { fixture, el } = await render();
+
+      live$.next(liveUpdate({ departure: '2026-12-01T15:00:00.000Z', status: 'delayed' }));
+      await settle(fixture);
+      const [departure, arrival] = dateCells(el);
+      expect(departure.classList).toContain('changed');
+      expect(arrival.classList).not.toContain('changed');
+      expect(chip(el).classList).toContain('changed');
+
+      departure.dispatchEvent(new Event('animationend'));
+      await settle(fixture);
+      expect(dateCells(el)[0].classList).not.toContain('changed');
+      expect(chip(el).classList).toContain('changed');
+    });
+
+    it('does not flash an update that leaves the values alone', async () => {
+      const { fixture, el } = await render();
+      live$.next(liveUpdate({}));
+      await settle(fixture);
+      expect(el.querySelectorAll('.changed')).toHaveLength(0);
+    });
+
+    it('disconnects when the screen closes', async () => {
+      const { fixture } = await render();
+      expect(api.updates).toHaveBeenCalledTimes(1);
+      expect(live$.observed).toBe(true);
+
+      fixture.destroy();
+      expect(live$.observed).toBe(false);
+      expect(TestBed.inject(FlightsStore).live()).toBe('off');
+    });
+  });
+
   it('links to the create form', async () => {
     const { el } = await render();
     const link = Array.from(el.querySelectorAll('a')).find((a) =>
@@ -92,7 +194,10 @@ describe('FlightList', () => {
 
   it('shows code, route, airline, translated status and price', async () => {
     const { el } = await render(of(pageOf([flightFixture({ status: 'inAir' })])));
-    const headers = Array.from(el.querySelectorAll('th')).map((th) => th.textContent?.trim());
+    // Without the live badges, which the next tests cover
+    const headers = Array.from(el.querySelectorAll('th')).map((th) =>
+      th.textContent?.replace(th.querySelector('.live')?.textContent ?? '', '').trim(),
+    );
     expect(headers).toEqual([
       'Code',
       'Origin',
