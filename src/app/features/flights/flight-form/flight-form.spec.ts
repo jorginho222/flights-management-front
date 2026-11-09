@@ -44,15 +44,19 @@ describe('FlightForm', () => {
 
   function fillValid(form: Form) {
     form.setValue({
-      airline: airlineFixture(),
-      airplane: airplaneFixture(),
-      origin: ezeiza,
-      destination: heathrow,
-      departureDate: new Date(2026, 11, 1),
-      departureTime: { hour: 10, minute: 5, period: 'AM' },
-      arrivalDate: new Date(2026, 11, 2),
-      arrivalTime: { hour: 12, minute: 15, period: 'AM' },
-      basePrice: 850.5,
+      details: {
+        airline: airlineFixture(),
+        airplane: airplaneFixture(),
+        origin: ezeiza,
+        destination: heathrow,
+        basePrice: 850.5,
+      },
+      schedule: {
+        departureDate: new Date(2026, 11, 1),
+        departureTime: { hour: 10, minute: 5, period: 'AM' },
+        arrivalDate: new Date(2026, 11, 2),
+        arrivalTime: { hour: 12, minute: 15, period: 'AM' },
+      },
     });
   }
 
@@ -80,11 +84,11 @@ describe('FlightForm', () => {
   it('loads the airline and airplane options, and clears the last save error', async () => {
     const store = TestBed.inject(FlightsStore);
     api.create.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 409 })));
-    store.create({ flight: {} as never, onSuccess: vi.fn() });
-    expect(store.saveError()).not.toBeNull();
+    store.create({ input: {} as never, onSuccess: vi.fn() });
+    expect(store.saveErrors().create).toBeDefined();
 
     await render();
-    expect(store.saveError()).toBeNull();
+    expect(store.saveErrors()).toEqual({});
     expect(store.airlines()).toEqual([airlineFixture()]);
     expect(store.airplanes()).toEqual([airplaneFixture()]);
   });
@@ -154,22 +158,23 @@ describe('FlightForm', () => {
     }
     await new Promise((resolve) => setTimeout(resolve, 300));
     await settle(fixture);
-    expect(form.controls.departureTime.controls.minute.value).toBe(5);
+    expect(form.controls.schedule.controls.departureTime.controls.minute.value).toBe(5);
   });
 
   it('treats typed text in an airport field as missing', async () => {
     const { form } = await render();
-    form.controls.origin.setValue('Ezei' as never);
-    expect(form.controls.origin.hasError('required')).toBe(true);
-    form.controls.origin.setValue(ezeiza);
-    expect(form.controls.origin.valid).toBe(true);
+    const origin = form.controls.details.controls.origin;
+    origin.setValue('Ezei' as never);
+    expect(origin.hasError('required')).toBe(true);
+    origin.setValue(ezeiza);
+    expect(origin.valid).toBe(true);
   });
 
   it('rejects the same airport at both ends', async () => {
     const { fixture, el, form } = await render();
     fillValid(form);
-    form.patchValue({ destination: { ...ezeiza } });
-    expect(form.hasError('sameAirports')).toBe(true);
+    form.patchValue({ details: { destination: { ...ezeiza } } });
+    expect(form.controls.details.hasError('sameAirports')).toBe(true);
 
     submit(el);
     await settle(fixture);
@@ -181,10 +186,12 @@ describe('FlightForm', () => {
     const { fixture, el, form } = await render();
     fillValid(form);
     form.patchValue({
-      arrivalDate: new Date(2026, 11, 1),
-      arrivalTime: { hour: 10, minute: 5, period: 'AM' },
+      schedule: {
+        arrivalDate: new Date(2026, 11, 1),
+        arrivalTime: { hour: 10, minute: 5, period: 'AM' },
+      },
     });
-    expect(form.hasError('arrivalBeforeDeparture')).toBe(true);
+    expect(form.controls.schedule.hasError('arrivalBeforeDeparture')).toBe(true);
 
     submit(el);
     await settle(fixture);
@@ -200,8 +207,9 @@ describe('FlightForm', () => {
     [10.125, false],
   ])('base price %j valid: %s', async (value, valid) => {
     const { form } = await render();
-    form.controls.basePrice.setValue(value);
-    expect(form.controls.basePrice.valid).toBe(valid);
+    const basePrice = form.controls.details.controls.basePrice;
+    basePrice.setValue(value);
+    expect(basePrice.valid).toBe(valid);
   });
 
   it('creates the flight, then shows its code and goes back to the list', async () => {

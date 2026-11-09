@@ -1,0 +1,60 @@
+<p class="help">{{ 'flights.form.scheduleHint' | transloco }}</p>
+<div class="fields pair">
+  @for (moment of moments(); track moment.key) {
+    <mat-form-field>
+      <mat-label>{{ 'flights.form.fields.' + moment.key + 'Date' | transloco }}</mat-label>
+      <input matInput [formControl]="moment.date" [matDatepicker]="datePicker" />
+      <mat-datepicker-toggle matIconSuffix [for]="datePicker" />
+      <mat-datepicker #datePicker />
+      <mat-hint>{{ 'flights.form.dateHint' | transloco }}</mat-hint>
+      <mat-error>
+        @if (fieldError(moment.date); as e) {
+          {{ e.key | transloco: e.params }}
+        }
+      </mat-error>
+    </mat-form-field>
+
+    <div
+      class="time"
+      role="group"
+      [attr.aria-label]="'flights.form.fields.' + moment.key + 'Time' | transloco"
+    >
+      <mat-form-field>
+        <mat-label>{{ 'flights.form.fields.hour' | transloco }}</mat-label>
+        <mat-select [formControl]="moment.time.controls.hour">
+          @for (hour of hours; track hour) {
+            <mat-option [value]="hour">{{ hour }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>{{ 'flights.form.fields.minute' | transloco }}</mat-label>
+        <mat-select [formControl]="moment.time.controls.minute">
+          @for (minute of minuteOptions(moment.time.controls.minute.value); track minute) {
+            <mat-option [value]="minute">{{ pad(minute) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>{{ 'flights.form.fields.period' | transloco }}</mat-label>
+        <mat-select [formControl]="moment.time.controls.period">
+          @for (period of periods; track period) {
+            <mat-option [value]="period">{{
+              'flights.form.periods.' + period | transloco
+            }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      @if (timeIncomplete(moment.time)) {
+        <p class="field-error time-error" role="alert">
+          {{ 'flights.form.timeRequired' | transloco }}
+        </p>
+      }
+    </div>
+  }
+</div>
+@if (scheduleError()) {
+  <p class="field-error" role="alert">
+    {{ 'flights.form.arrivalBeforeDeparture' | transloco }}
+  </p>
+}

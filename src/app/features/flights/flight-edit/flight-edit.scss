@@ -1,0 +1,33 @@
+@use '../flight-page';
+
+.state {
+  padding: 48px 16px;
+  text-align: center;
+}
+
+.tab {
+  padding-top: 16px;
+}
+
+.help {
+  margin: 0 0 16px;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+// Something the user should know before saving this tab
+.note {
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  border-radius: var(--mat-sys-corner-small);
+  background-color: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-on-surface);
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
+}
+
+mat-form-field {
+  width: 100%;
+}

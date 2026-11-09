@@ -6,164 +6,14 @@
 <h1 class="title">{{ 'flights.form.title' | transloco }}</h1>
 
 <form [formGroup]="form" novalidate (ngSubmit)="submit()">
-  <section>
-    <h2>{{ 'flights.form.sections.operation' | transloco }}</h2>
-    <div class="fields pair">
-      <mat-form-field>
-        <mat-label>{{ 'flights.form.fields.airline' | transloco }}</mat-label>
-        <mat-select formControlName="airline" [compareWith]="sameId">
-          @for (airline of store.airlines(); track airline.id) {
-            <mat-option [value]="airline">{{ airline.name }} ({{ airline.code }})</mat-option>
-          }
-        </mat-select>
-        @if (store.airlinesError()) {
-          <mat-hint class="error">{{ 'flights.form.airlinesError' | transloco }}</mat-hint>
-        }
-        <mat-error>
-          @if (fieldError(form.controls.airline); as e) {
-            {{ e.key | transloco: e.params }}
-          }
-        </mat-error>
-      </mat-form-field>
-
-      <mat-form-field>
-        <mat-label>{{ 'flights.form.fields.airplane' | transloco }}</mat-label>
-        <mat-select formControlName="airplane" [compareWith]="sameId">
-          @for (airplane of store.airplanes(); track airplane.id) {
-            <mat-option [value]="airplane">
-              {{
-                'flights.form.airplaneOption'
-                  | transloco
-                    : { name: airplaneName(airplane), capacity: airplane.passengersCapacity }
-              }}
-            </mat-option>
-          }
-        </mat-select>
-        @if (store.airplanesError()) {
-          <mat-hint class="error">{{ 'flights.form.airplanesError' | transloco }}</mat-hint>
-        }
-        <mat-error>
-          @if (fieldError(form.controls.airplane); as e) {
-            {{ e.key | transloco: e.params }}
-          }
-        </mat-error>
-      </mat-form-field>
-    </div>
-    @if (store.airlinesError() || store.airplanesError()) {
-      <button matButton="outlined" type="button" class="retry" (click)="loadOptions()">
-        {{ 'common.retry' | transloco }}
-      </button>
-    }
-  </section>
-
-  <section>
-    <h2>{{ 'flights.form.sections.route' | transloco }}</h2>
-    <div class="route">
-      <app-airport-autocomplete
-        class="airport"
-        labelKey="flights.form.fields.origin"
-        [control]="form.controls.origin"
-      />
-      <button
-        matIconButton
-        type="button"
-        class="swap"
-        [attr.aria-label]="'flights.filters.swap' | transloco"
-        (click)="swapRoute()"
-      >
-        <mat-icon>swap_horiz</mat-icon>
-      </button>
-      <app-airport-autocomplete
-        class="airport"
-        labelKey="flights.form.fields.destination"
-        [control]="form.controls.destination"
-      />
-    </div>
-    @if (routeError(); as key) {
-      <p class="field-error" role="alert">{{ key | transloco }}</p>
-    }
-  </section>
+  <app-flight-details-fields [group]="form.controls.details" />
 
   <section>
     <h2>{{ 'flights.form.sections.schedule' | transloco }}</h2>
-    <p class="help">{{ 'flights.form.scheduleHint' | transloco }}</p>
-    <div class="fields pair">
-      @for (moment of moments; track moment.key) {
-        <mat-form-field>
-          <mat-label>{{ 'flights.form.fields.' + moment.key + 'Date' | transloco }}</mat-label>
-          <input matInput [formControl]="moment.date" [matDatepicker]="datePicker" />
-          <mat-datepicker-toggle matIconSuffix [for]="datePicker" />
-          <mat-datepicker #datePicker />
-          <mat-hint>{{ 'flights.form.dateHint' | transloco }}</mat-hint>
-          <mat-error>
-            @if (fieldError(moment.date); as e) {
-              {{ e.key | transloco: e.params }}
-            }
-          </mat-error>
-        </mat-form-field>
-
-        <div
-          class="time"
-          role="group"
-          [attr.aria-label]="'flights.form.fields.' + moment.key + 'Time' | transloco"
-        >
-          <mat-form-field>
-            <mat-label>{{ 'flights.form.fields.hour' | transloco }}</mat-label>
-            <mat-select [formControl]="moment.time.controls.hour">
-              @for (hour of hours; track hour) {
-                <mat-option [value]="hour">{{ hour }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-          <mat-form-field>
-            <mat-label>{{ 'flights.form.fields.minute' | transloco }}</mat-label>
-            <mat-select [formControl]="moment.time.controls.minute">
-              @for (minute of minutes; track minute) {
-                <mat-option [value]="minute">{{ pad(minute) }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-          <mat-form-field>
-            <mat-label>{{ 'flights.form.fields.period' | transloco }}</mat-label>
-            <mat-select [formControl]="moment.time.controls.period">
-              @for (period of periods; track period) {
-                <mat-option [value]="period">{{
-                  'flights.form.periods.' + period | transloco
-                }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-          @if (timeIncomplete(moment.time)) {
-            <p class="field-error time-error" role="alert">
-              {{ 'flights.form.timeRequired' | transloco }}
-            </p>
-          }
-        </div>
-      }
-    </div>
-    @if (scheduleError()) {
-      <p class="field-error" role="alert">
-        {{ 'flights.form.arrivalBeforeDeparture' | transloco }}
-      </p>
-    }
+    <app-flight-schedule-fields [group]="form.controls.schedule" />
   </section>
 
-  <section>
-    <h2>{{ 'flights.form.sections.price' | transloco }}</h2>
-    <div class="fields">
-      <mat-form-field>
-        <mat-label>{{ 'flights.form.fields.basePrice' | transloco }}</mat-label>
-        <input matInput type="number" min="0" step="0.01" formControlName="basePrice" />
-        <mat-error>
-          @if (fieldError(form.controls.basePrice); as e) {
-            {{ e.key | transloco: e.params }}
-          }
-        </mat-error>
-      </mat-form-field>
-    </div>
-  </section>
-
-  @if (store.saveError(); as error) {
+  @if (store.saveErrors().create; as error) {
     <div class="save-error" role="alert">
       @for (message of error.messages; track message) {
         <p>{{ message }}</p>
@@ -175,7 +25,7 @@
 
   <div class="form-actions">
     <a matButton routerLink="/flights">{{ 'common.cancel' | transloco }}</a>
-    <button matButton="filled" type="submit" [disabled]="store.saving()">
+    <button matButton="filled" type="submit" [disabled]="store.saving().create">
       {{ 'common.save' | transloco }}
     </button>
   </div>

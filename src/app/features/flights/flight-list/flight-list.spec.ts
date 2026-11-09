@@ -83,6 +83,13 @@ describe('FlightList', () => {
     expect(link?.getAttribute('href')).toBe('/new');
   });
 
+  it('links each flight to its edit form', async () => {
+    const { el } = await render();
+    const edit = el.querySelector<HTMLAnchorElement>('td.row-actions a')!;
+    expect(edit.getAttribute('href')).toBe(`/${flightFixture().id}/edit`);
+    expect(edit.getAttribute('aria-label')).toBe('Edit flight LG1132');
+  });
+
   it('shows code, route, airline, translated status and price', async () => {
     const { el } = await render(of(pageOf([flightFixture({ status: 'inAir' })])));
     const headers = Array.from(el.querySelectorAll('th')).map((th) => th.textContent?.trim());
@@ -95,6 +102,7 @@ describe('FlightList', () => {
       'Airline',
       'Status',
       'Base price',
+      'Actions',
     ]);
     const [cells] = rows(el);
     expect(cells[0]).toBe('LG1132');

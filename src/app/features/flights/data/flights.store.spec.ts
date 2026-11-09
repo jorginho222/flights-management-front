@@ -19,7 +19,11 @@ describe('FlightsStore', () => {
   let airlines$: Subject<Airline[]>;
   let airplanes$: Subject<Airplane[]>;
   let created: Subject<Flight>[];
-  let api: { search: ReturnType<typeof vi.fn>; create: ReturnType<typeof vi.fn> };
+  let updates: Record<'details' | 'schedule' | 'status', Subject<Flight>>;
+  let api: Record<
+    'search' | 'create' | 'update' | 'updateSchedule' | 'updateStatus',
+    ReturnType<typeof vi.fn>
+  >;
   let airlinesApi: { list: ReturnType<typeof vi.fn> };
   let airplanesApi: { list: ReturnType<typeof vi.fn> };
   let store: InstanceType<typeof FlightsStore>;
@@ -32,7 +36,11 @@ describe('FlightsStore', () => {
     airlines$ = new Subject();
     airplanes$ = new Subject();
     created = [];
+    updates = { details: new Subject(), schedule: new Subject(), status: new Subject() };
     api = {
+      update: vi.fn(() => updates.details),
+      updateSchedule: vi.fn(() => updates.schedule),
+      updateStatus: vi.fn(() => updates.status),
       create: vi.fn(() => {
         const response = new Subject<Flight>();
         created.push(response);
@@ -158,41 +166,134 @@ describe('FlightsStore', () => {
 
     it('posts the flight and hands the saved one to onSuccess, leaving the shown page alone', () => {
       const onSuccess = vi.fn();
-      store.create({ flight: input, onSuccess });
-      expect(store.saving()).toBe(true);
+      store.create({ input, onSuccess });
+      expect(store.saving().create).toBe(true);
       expect(api.create).toHaveBeenCalledExactlyOnceWith(input);
 
       const saved = flightFixture({ id: input.id });
       created[0].next(saved);
-      expect(store.saving()).toBe(false);
+      expect(store.saving().create).toBe(false);
       expect(onSuccess).toHaveBeenCalledExactlyOnceWith(saved);
       expect(store.entities()).toEqual([]);
     });
 
     it('ignores a second submit while the first is saving', () => {
-      store.create({ flight: input, onSuccess: vi.fn() });
-      store.create({ flight: input, onSuccess: vi.fn() });
+      store.create({ input, onSuccess: vi.fn() });
+      store.create({ input, onSuccess: vi.fn() });
       expect(api.create).toHaveBeenCalledTimes(1);
     });
 
     it('keeps the API messages on error, and resetForm clears them', () => {
       const onSuccess = vi.fn();
-      store.create({ flight: input, onSuccess });
+      store.create({ input, onSuccess });
       created[0].error(
         new HttpErrorResponse({
           status: 400,
           error: { message: 'Origin and destination must be different' },
         }),
       );
-      expect(store.saving()).toBe(false);
-      expect(store.saveError()).toEqual({
+      expect(store.saving().create).toBe(false);
+      expect(store.saveErrors().create).toEqual({
         status: 400,
         messages: ['Origin and destination must be different'],
       });
       expect(onSuccess).not.toHaveBeenCalled();
 
       store.resetForm();
-      expect(store.saveError()).toBeNull();
+      expect(store.saveErrors()).toEqual({});
+    });
+  });
+
+  describe('editing', () => {
+    const flight = flightFixture();
+
+    /** Puts the flight in the store the way the list does: as a search result. */
+    function searchAndSelect() {
+      store.search(filters);
+      respond(0, pageOf([flight]));
+      store.loadOne(flight.id);
+    }
+
+    it('selects a flight from the last search, or reports it missing', () => {
+      searchAndSelect();
+      expect(store.selected()).toEqual(flight);
+      expect(store.selectedMissing()).toBe(false);
+
+      store.loadOne('55555555-5555-4555-8555-555555555555');
+      expect(store.selected()).toBeNull();
+      expect(store.selectedMissing()).toBe(true);
+    });
+
+    it('replaces the flight with what PUT returns, such as a new code', () => {
+      searchAndSelect();
+      const onSuccess = vi.fn();
+      const { id, ...body } = { id: flight.id, ...toUpdate(flight) };
+      store.updateDetails({ input: { id, ...body }, onSuccess });
+      expect(api.update).toHaveBeenCalledExactlyOnceWith(flight.id, body);
+      expect(store.saving().details).toBe(true);
+
+      const saved = flightFixture({ code: { prefix: 'AR', correlative: 9 }, version: 4 });
+      updates.details.next(saved);
+      expect(store.selected()).toEqual(saved);
+      expect(store.entityMap()[flight.id]).toEqual(saved);
+      expect(store.saving().details).toBe(false);
+      expect(onSuccess).toHaveBeenCalledExactlyOnceWith(saved);
+    });
+
+    it('merges only the schedule, status and version from a PATCH, which lacks relations', () => {
+      searchAndSelect();
+      const onSuccess = vi.fn();
+      const schedule = {
+        id: flight.id,
+        departure: '2026-12-01T15:00:00.000Z',
+        arrival: '2026-12-02T05:00:00.000Z',
+      };
+      store.updateSchedule({ input: schedule, onSuccess });
+      expect(api.updateSchedule).toHaveBeenCalledExactlyOnceWith(schedule);
+
+      const bare: Partial<Flight> = flightFixture({ ...schedule, status: 'delayed', version: 4 });
+      for (const relation of ['airline', 'airplane', 'origin', 'destination'] as const) {
+        delete bare[relation];
+      }
+      updates.schedule.next(bare as Flight);
+
+      const expected = { ...flight, ...schedule, status: 'delayed', version: 4 };
+      expect(store.selected()).toEqual(expected);
+      expect(store.entityMap()[flight.id]).toEqual(expected);
+      expect(onSuccess).toHaveBeenCalledExactlyOnceWith(expected);
+    });
+
+    it('saves the status, and keeps the error of each section apart', () => {
+      searchAndSelect();
+      store.updateStatus({ input: { id: flight.id, status: 'boarding' }, onSuccess: vi.fn() });
+      expect(api.updateStatus).toHaveBeenCalledExactlyOnceWith({
+        id: flight.id,
+        status: 'boarding',
+      });
+      updates.status.error(new HttpErrorResponse({ status: 500 }));
+
+      expect(store.saveErrors()).toEqual({ status: { status: 500, messages: [] } });
+      expect(store.selected()).toEqual(flight);
+
+      store.loadOne(flight.id);
+      expect(store.saveErrors()).toEqual({});
+    });
+
+    it('lets different sections save at once, but ignores a repeat of a running one', () => {
+      searchAndSelect();
+      const input = { id: flight.id, status: 'boarding' as const };
+      store.updateStatus({ input, onSuccess: vi.fn() });
+      store.updateStatus({ input, onSuccess: vi.fn() });
+      store.updateDetails({ input: { id: flight.id, ...toUpdate(flight) }, onSuccess: vi.fn() });
+
+      expect(api.updateStatus).toHaveBeenCalledTimes(1);
+      expect(api.update).toHaveBeenCalledTimes(1);
+      expect(store.saving()).toEqual({ status: true, details: true });
     });
   });
 });
+
+function toUpdate(flight: Flight) {
+  const { airline, airplane, origin, destination, basePrice, version } = flight;
+  return { airline, airplane, origin, destination, basePrice, version };
+}

@@ -62,6 +62,7 @@ export class FlightList implements OnInit {
     'airline',
     'status',
     'basePrice',
+    'actions',
   ];
   protected readonly statuses = FLIGHT_STATUSES;
   protected readonly code = flightCode;

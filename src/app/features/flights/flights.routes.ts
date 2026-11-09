@@ -16,6 +16,10 @@ export const FLIGHTS_ROUTES: Routes = [
         path: 'new',
         loadComponent: () => import('./flight-form/flight-form').then((m) => m.FlightForm),
       },
+      {
+        path: ':id/edit',
+        loadComponent: () => import('./flight-edit/flight-edit').then((m) => m.FlightEdit),
+      },
     ],
   },
 ];

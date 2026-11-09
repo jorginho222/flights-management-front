@@ -1,9 +1,9 @@
 import { inject } from '@angular/core';
 import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStore, withMethods, withState } from '@ngrx/signals';
-import { setAllEntities, withEntities } from '@ngrx/signals/entities';
+import { setAllEntities, updateEntity, withEntities } from '@ngrx/signals/entities';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { exhaustMap, of, pipe, switchMap, tap } from 'rxjs';
+import { exhaustMap, Observable, of, pipe, switchMap, tap } from 'rxjs';
 import { ApiError, toApiError } from '../../../core/http/api-error';
 import { PaginationMeta } from '../../../core/http/paginated-result';
 import { Airline } from '../../airlines/data/airline.model';
@@ -11,7 +11,13 @@ import { AirlinesApi } from '../../airlines/data/airlines-api';
 import { Airplane } from '../../airplanes/data/airplane.model';
 import { AirplanesApi } from '../../airplanes/data/airplanes-api';
 import { FlightSearchFilters, toSearchCriteria } from './flight-search.mapper';
-import { CreateFlightInput, Flight } from './flight.model';
+import {
+  CreateFlightInput,
+  Flight,
+  FlightScheduleInput,
+  FlightStatusInput,
+  UpdateFlightInput,
+} from './flight.model';
 import { FlightsApi } from './flights-api';
 
 export const DEFAULT_PAGE_SIZE = 20;
@@ -30,8 +36,13 @@ interface FlightsState {
   airplanes: Airplane[];
   airplanesLoading: boolean;
   airplanesError: ApiError | null;
-  saving: boolean;
-  saveError: ApiError | null;
+  /** The flight the edit screen shows, kept apart so a list reload can't drop it. */
+  selected: Flight | null;
+  /** There is no `GET /flights/:id`, so a flight the store lacks (after a reload) can't load. */
+  selectedMissing: boolean;
+  /** Each save runs on its own, so one section saving doesn't block another. */
+  saving: Partial<Record<FlightSaveSection, boolean>>;
+  saveErrors: Partial<Record<FlightSaveSection, ApiError>>;
 }
 
 const initialState: FlightsState = {
@@ -47,8 +58,10 @@ const initialState: FlightsState = {
   airplanes: [],
   airplanesLoading: false,
   airplanesError: null,
-  saving: false,
-  saveError: null,
+  selected: null,
+  selectedMissing: false,
+  saving: {},
+  saveErrors: {},
 };
 
 interface SearchRequest {
@@ -57,11 +70,22 @@ interface SearchRequest {
   limit: number;
 }
 
-export interface CreateFlightRequest {
-  flight: CreateFlightInput;
-  /** Gets the saved flight, which carries the code the API assigned. */
+/** The create form, then the edit screen's three tabs, each with its own endpoint. */
+export type FlightSaveSection = 'create' | 'details' | 'schedule' | 'status';
+
+export interface SaveFlightRequest<T> {
+  input: T;
+  /** Gets the flight as stored after the save, such as with the code the API assigned. */
   onSuccess: (flight: Flight) => void;
 }
+
+/** The PATCH endpoints send the flight back without its relations, so only these are kept. */
+const patchedFields = ({ departure, arrival, status, version }: Flight) => ({
+  departure,
+  arrival,
+  status,
+  version,
+});
 
 export const FlightsStore = signalStore(
   withEntities<Flight>(),
@@ -73,6 +97,49 @@ export const FlightsStore = signalStore(
       airlinesApi = inject(AirlinesApi),
       airplanesApi = inject(AirplanesApi),
     ) => {
+      /**
+       * A save for one section. exhaustMap ignores repeat submits while it runs. On success,
+       * `changes` picks what to merge into the edited flight and its row in the list.
+       */
+      const saveSection = <T>(
+        section: FlightSaveSection,
+        call: (input: T) => Observable<Flight>,
+        changes: (saved: Flight) => Partial<Flight> | undefined,
+      ) =>
+        rxMethod<SaveFlightRequest<T>>(
+          pipe(
+            exhaustMap(({ input, onSuccess }) => {
+              patchState(store, (state) => ({
+                saving: { ...state.saving, [section]: true },
+                saveErrors: { ...state.saveErrors, [section]: undefined },
+              }));
+              return call(input).pipe(
+                tapResponse({
+                  next: (saved) => {
+                    const merged = changes(saved);
+                    const selected = store.selected();
+                    if (merged && selected?.id === saved.id) {
+                      patchState(store, { selected: { ...selected, ...merged } });
+                    }
+                    if (merged && store.entityMap()[saved.id]) {
+                      patchState(store, updateEntity({ id: saved.id, changes: merged }));
+                    }
+                    patchState(store, (state) => ({
+                      saving: { ...state.saving, [section]: false },
+                    }));
+                    onSuccess(merged && selected?.id === saved.id ? store.selected()! : saved);
+                  },
+                  error: (error) =>
+                    patchState(store, (state) => ({
+                      saving: { ...state.saving, [section]: false },
+                      saveErrors: { ...state.saveErrors, [section]: toApiError(error) },
+                    })),
+                }),
+              );
+            }),
+          ),
+        );
+
       /** switchMap: only the latest search's response is shown. */
       const query = rxMethod<SearchRequest>(
         pipe(
@@ -158,29 +225,45 @@ export const FlightsStore = signalStore(
 
         /** Starts a create form session. */
         resetForm(): void {
-          patchState(store, { saving: false, saveError: null });
+          patchState(store, { saving: {}, saveErrors: {} });
         },
 
-        /**
-         * exhaustMap ignores repeat submits while a save is running. The shown page is left
-         * alone: the list re-runs its search when reopened, which picks up the new flight.
-         */
-        create: rxMethod<CreateFlightRequest>(
-          pipe(
-            exhaustMap(({ flight, onSuccess }) => {
-              patchState(store, { saving: true, saveError: null });
-              return api.create(flight).pipe(
-                tapResponse({
-                  next: (saved) => {
-                    patchState(store, { saving: false });
-                    onSuccess(saved);
-                  },
-                  error: (error) =>
-                    patchState(store, { saving: false, saveError: toApiError(error) }),
-                }),
-              );
-            }),
-          ),
+        /** Starts an edit session with a flight from the last search. */
+        loadOne(id: string): void {
+          const flight = store.entityMap()[id] ?? null;
+          patchState(store, {
+            selected: flight,
+            selectedMissing: !flight,
+            saving: {},
+            saveErrors: {},
+          });
+        },
+
+        /** The shown page is left alone: the list re-runs its search when reopened. */
+        create: saveSection<CreateFlightInput>(
+          'create',
+          (flight) => api.create(flight),
+          () => undefined,
+        ),
+
+        /** `PUT /flights/:id` returns the whole flight, which may carry a new code. */
+        updateDetails: saveSection<UpdateFlightInput & { id: string }>(
+          'details',
+          ({ id, ...flight }) => api.update(id, flight),
+          (saved) => saved,
+        ),
+
+        /** The API also sets the status to advanced or delayed. */
+        updateSchedule: saveSection<FlightScheduleInput>(
+          'schedule',
+          (schedule) => api.updateSchedule(schedule),
+          patchedFields,
+        ),
+
+        updateStatus: saveSection<FlightStatusInput>(
+          'status',
+          (status) => api.updateStatus(status),
+          patchedFields,
         ),
       };
     },

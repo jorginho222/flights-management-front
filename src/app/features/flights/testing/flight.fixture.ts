@@ -1,5 +1,6 @@
 import { PaginatedResult } from '../../../core/http/paginated-result';
 import { airlineFixture } from '../../airlines/testing/airline.fixture';
+import { airplaneFixture } from '../../airplanes/testing/airplane.fixture';
 import { Airport } from '../data/airport.model';
 import { Flight } from '../data/flight.model';
 
@@ -43,12 +44,14 @@ export function flightFixture(overrides: Partial<Flight> = {}): Flight {
     origin: ezeiza,
     destination: heathrow,
     airline: airlineFixture(),
+    airplane: airplaneFixture(),
     departure: '2026-12-01T13:30:00.000Z',
     arrival: '2026-12-02T03:15:00.000Z',
     status: 'scheduled',
     basePrice: 850.5,
     distance: 6900,
     isFullyReserved: false,
+    version: 3,
     ...overrides,
   };
 }

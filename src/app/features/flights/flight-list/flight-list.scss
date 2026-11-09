@@ -127,3 +127,20 @@
     }
   }
 }
+
+// The edit button's column: as narrow as its content
+.row-actions {
+  width: 1%;
+  text-align: end;
+  white-space: nowrap;
+  text-overflow: clip;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

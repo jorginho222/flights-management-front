@@ -52,6 +52,43 @@ describe('FlightsApi and AirportsApi', () => {
     expect(response).toEqual(saved);
   });
 
+  it.each([
+    [
+      'update',
+      (api: FlightsApi) => api.update('flight-id', { basePrice: 10 } as never),
+      'PUT',
+      'http://api.test/flights/flight-id',
+      { basePrice: 10 },
+    ],
+    [
+      'updateSchedule',
+      (api: FlightsApi) => api.updateSchedule({ id: 'flight-id', departure: 'a', arrival: 'b' }),
+      'PATCH',
+      'http://api.test/flights/schedule',
+      { id: 'flight-id', departure: 'a', arrival: 'b' },
+    ],
+    [
+      'updateStatus',
+      (api: FlightsApi) => api.updateStatus({ id: 'flight-id', status: 'boarding' }),
+      'PATCH',
+      'http://api.test/flights/status',
+      { id: 'flight-id', status: 'boarding' },
+    ],
+  ] as const)(
+    '%s sends %s to the right endpoint and returns the flight',
+    (_, call, method, url, body) => {
+      const saved = flightFixture();
+      let response: unknown;
+      call(TestBed.inject(FlightsApi)).subscribe((value) => (response = value));
+
+      const request = http.expectOne(url);
+      expect(request.request.method).toBe(method);
+      expect(request.request.body).toEqual(body);
+      request.flush(saved);
+      expect(response).toEqual(saved);
+    },
+  );
+
   it('searches airports by text with a limit', () => {
     TestBed.inject(AirportsApi).search('eze', 15).subscribe();
 

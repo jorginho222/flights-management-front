@@ -31,13 +31,14 @@ export interface FlightCode {
   correlative: number;
 }
 
-/** A search result. The API also sends `seats`, which the list doesn't use. */
+/** A search result. The API also sends `seats`, which the panel doesn't use. */
 export interface Flight {
   id: string;
   code: FlightCode;
   origin: Airport;
   destination: Airport;
   airline: Airline;
+  airplane: Airplane;
   /** ISO date-time. */
   departure: string;
   /** ISO date-time. */
@@ -47,6 +48,11 @@ export interface Flight {
   /** Statute miles. */
   distance: number;
   isFullyReserved: boolean;
+  /**
+   * Bumped by every save and by every order. `PUT /flights/:id` sends back the version
+   * the form loaded, and is rejected with 409 if the flight has orders and it's stale.
+   */
+  version: number;
 }
 
 /** The body of `QUERY /flights` (the API's `SearchFlightsDto`). */
@@ -81,6 +87,35 @@ export interface CreateFlightInput {
   /** ISO date-time. */
   arrival: string;
   basePrice: number;
+}
+
+/**
+ * The body of `PUT /flights/:id`. Only a scheduled flight can be edited. Changing the
+ * airline gives the flight a new code. Departure, arrival and status change through
+ * their own endpoints.
+ */
+export interface UpdateFlightInput {
+  airline: Airline;
+  airplane: Airplane;
+  origin: Airport;
+  destination: Airport;
+  basePrice: number;
+  version: number;
+}
+
+/** The body of `PATCH /flights/schedule`. The API also sets the status to advanced or delayed. */
+export interface FlightScheduleInput {
+  id: string;
+  /** ISO date-time. */
+  departure: string;
+  /** ISO date-time. */
+  arrival: string;
+}
+
+/** The body of `PATCH /flights/status`. */
+export interface FlightStatusInput {
+  id: string;
+  status: FlightStatus;
 }
 
 /** Such as "AR1132". */
