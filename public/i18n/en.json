@@ -181,9 +181,6 @@
     "scheduled": "Scheduled",
     "checkInOpen": "Check-in open",
     "checkInClosed": "Check-in closed",
-    "onTime": "On time",
-    "advanced": "Advanced",
-    "delayed": "Delayed",
     "gateChanged": "Gate changed",
     "boarding": "Boarding",
     "finalCall": "Final call",
@@ -238,6 +235,7 @@
       "loadError": "Couldn't load flights.",
       "empty": "No flights match these filters.",
       "edit": "Edit flight {{code}}",
+      "rescheduled": "Rescheduled",
       "live": {
         "connecting": "Connecting to live updates…",
         "connected": "Status and schedule changes appear as they happen",
@@ -300,7 +298,7 @@
       "updated": "Flight {{code}} was updated.",
       "airlineCodeHint": "Changing the airline gives the flight a new code.",
       "detailsLocked": "Only scheduled flights can change these details, and this flight is {{status}}.",
-      "scheduleSaveHint": "Saving a new schedule marks the flight Advanced if it departs earlier, or Delayed otherwise. After that its airline, airplane, route and price can no longer change.",
+      "scheduleSaveHint": "Saving a new departure or arrival marks the flight Rescheduled. Its status doesn't change.",
       "fields": {
         "status": "Status"
       }

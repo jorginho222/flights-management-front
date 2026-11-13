@@ -30,8 +30,6 @@ const sameValue = (field: LiveField, a: LiveValues, b: LiveValues): boolean =>
     : new Date(a[field]).getTime() === new Date(b[field]).getTime();
 
 const STATUS_TONES: Partial<Record<FlightStatus, StatusTone>> = {
-  advanced: 'warning',
-  delayed: 'warning',
   gateChanged: 'warning',
   diverted: 'error',
   cancelled: 'error',

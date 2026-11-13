@@ -160,6 +160,9 @@
           >
             {{ flight.departure | date: 'short' }}
           </span>
+          @if (flight.wasRescheduled) {
+            <span class="rescheduled">{{ 'flights.list.rescheduled' | transloco }}</span>
+          }
         </td>
       </ng-container>
 
@@ -176,6 +179,9 @@
           >
             {{ flight.arrival | date: 'short' }}
           </span>
+          @if (flight.wasRescheduled) {
+            <span class="rescheduled">{{ 'flights.list.rescheduled' | transloco }}</span>
+          }
         </td>
       </ng-container>
 

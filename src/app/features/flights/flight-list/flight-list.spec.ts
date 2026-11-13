@@ -85,13 +85,23 @@ describe('FlightList', () => {
         label: badge.textContent?.trim(),
       }));
     const chip = (el: HTMLElement) => el.querySelector<HTMLElement>('td .status')!;
+    const labels = (el: HTMLElement) =>
+      Array.from(el.querySelectorAll('td .rescheduled')).map((label) => label.textContent?.trim());
     const dateCells = (el: HTMLElement) =>
       Array.from(el.querySelectorAll<HTMLElement>('td .live-value'));
     const liveUpdate = (changes: Partial<Flight>): FlightLiveEvent => {
-      const { id, departure, arrival, status, version } = flightFixture();
+      const { id, departure, arrival, status, wasRescheduled, version } = flightFixture();
       return {
         type: 'updated',
-        flight: { id, departure, arrival, status, version: version + 1, ...changes },
+        flight: {
+          id,
+          departure,
+          arrival,
+          status,
+          wasRescheduled,
+          version: version + 1,
+          ...changes,
+        },
       };
     };
 
@@ -146,7 +156,7 @@ describe('FlightList', () => {
     it('flashes only the departure or arrival that changed, each until its animation ends', async () => {
       const { fixture, el } = await render();
 
-      live$.next(liveUpdate({ departure: '2026-12-01T15:00:00.000Z', status: 'delayed' }));
+      live$.next(liveUpdate({ departure: '2026-12-01T15:00:00.000Z', status: 'gateChanged' }));
       await settle(fixture);
       const [departure, arrival] = dateCells(el);
       expect(departure.classList).toContain('changed');
@@ -157,6 +167,17 @@ describe('FlightList', () => {
       await settle(fixture);
       expect(dateCells(el)[0].classList).not.toContain('changed');
       expect(chip(el).classList).toContain('changed');
+    });
+
+    it('shows the rescheduled label under departure and arrival once a live update sets it', async () => {
+      const { fixture, el } = await render();
+      expect(labels(el)).toEqual([]);
+
+      live$.next(liveUpdate({ departure: '2026-12-01T15:00:00.000Z', wasRescheduled: true }));
+      await settle(fixture);
+      expect(labels(el)).toEqual(['Rescheduled', 'Rescheduled']);
+      expect(rows(el)[0][3]).toMatch(/Rescheduled$/);
+      expect(rows(el)[0][4]).toMatch(/Rescheduled$/);
     });
 
     it('does not flash an update that leaves the values alone', async () => {
@@ -190,6 +211,19 @@ describe('FlightList', () => {
     const edit = el.querySelector<HTMLAnchorElement>('td.row-actions a')!;
     expect(edit.getAttribute('href')).toBe(`/${flightFixture().id}/edit`);
     expect(edit.getAttribute('aria-label')).toBe('Edit flight LG1132');
+  });
+
+  it('shows no rescheduled label for a flight that keeps its schedule', async () => {
+    const { el } = await render();
+    expect(el.querySelectorAll('td .rescheduled')).toHaveLength(0);
+  });
+
+  it('labels a rescheduled flight in its departure and arrival', async () => {
+    const { el } = await render(of(pageOf([flightFixture({ wasRescheduled: true })])));
+    const cells = Array.from(el.querySelectorAll('td .rescheduled')).map((label) =>
+      label.closest('td')!.classList.contains('mat-column-departure') ? 'departure' : 'arrival',
+    );
+    expect(cells).toEqual(['departure', 'arrival']);
   });
 
   it('shows code, route, airline, translated status and price', async () => {
@@ -226,7 +260,7 @@ describe('FlightList', () => {
       destination: heathrow,
       departureFrom: null,
       departureTo: null,
-      status: 'delayed',
+      status: 'gateChanged',
       airlineCode: 'LG',
     });
     button(el, 'Search').click();
@@ -235,7 +269,7 @@ describe('FlightList', () => {
     expect(api.search).toHaveBeenLastCalledWith({
       origin: 'EZE',
       destination: 'LHR',
-      status: 'delayed',
+      status: 'gateChanged',
       airlineCode: 'LG',
       page: 1,
       limit: 20,
