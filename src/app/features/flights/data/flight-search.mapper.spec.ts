@@ -19,6 +19,11 @@ describe('flight search mapper', () => {
     ).toEqual({ origin: 'EZE', destination: 'LHR', status: 'gateChanged', airlineCode: 'LG' });
   });
 
+  it.each([true, false])('sends isDelayed %s, and leaves it out when null', (isDelayed) => {
+    expect(toSearchCriteria({ ...emptyFilters(), isDelayed })).toEqual({ isDelayed });
+    expect(toSearchCriteria({ ...emptyFilters(), isDelayed: null })).toEqual({});
+  });
+
   it('ignores text left in an airport control', () => {
     const typed = 'eze' as unknown as typeof ezeiza;
     expect(toSearchCriteria({ ...emptyFilters(), origin: typed })).toEqual({});

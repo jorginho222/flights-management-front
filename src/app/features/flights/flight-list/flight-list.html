@@ -65,6 +65,15 @@
     </mat-form-field>
 
     <mat-form-field>
+      <mat-label>{{ 'flights.filters.punctuality' | transloco }}</mat-label>
+      <mat-select formControlName="isDelayed">
+        <mat-option [value]="null">{{ 'flights.filters.anyPunctuality' | transloco }}</mat-option>
+        <mat-option [value]="false">{{ 'flights.punctuality.onTime' | transloco }}</mat-option>
+        <mat-option [value]="true">{{ 'flights.punctuality.delayed' | transloco }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field>
       <mat-label>{{ 'flights.filters.airline' | transloco }}</mat-label>
       <mat-select formControlName="airlineCode">
         <mat-option [value]="null">{{ 'flights.filters.anyAirline' | transloco }}</mat-option>
@@ -181,6 +190,26 @@
           </span>
           @if (flight.wasRescheduled) {
             <span class="rescheduled">{{ 'flights.list.rescheduled' | transloco }}</span>
+          }
+        </td>
+      </ng-container>
+
+      <!-- Set by the API's delay job. A cancelled flight keeps its flag, but shows nothing. -->
+      <ng-container matColumnDef="punctuality">
+        <th mat-header-cell *matHeaderCellDef>
+          <ng-container [ngTemplateOutlet]="liveBadge" />
+          {{ 'flights.columns.punctuality' | transloco }}
+        </th>
+        <td mat-cell *matCellDef="let flight">
+          @if (flight.status !== 'cancelled') {
+            <span
+              class="punctuality"
+              [class.changed]="isChanged(flight, 'isDelayed')"
+              [attr.data-tone]="flight.isDelayed ? 'error' : 'success'"
+              (animationend)="highlighted(flight, 'isDelayed')"
+            >
+              {{ 'flights.punctuality.' + (flight.isDelayed ? 'delayed' : 'onTime') | transloco }}
+            </span>
           }
         </td>
       </ng-container>

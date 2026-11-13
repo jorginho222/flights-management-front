@@ -20,14 +20,15 @@ import { FlightsStore } from '../data/flights.store';
 
 type StatusTone = 'neutral' | 'success' | 'warning' | 'error';
 
-/** The columns that live updates change, each highlighted on its own. */
-type LiveField = 'status' | 'departure' | 'arrival';
+/** The values that live updates change, each highlighted on its own. */
+type LiveField = 'status' | 'departure' | 'arrival' | 'isDelayed';
 type LiveValues = Pick<Flight, LiveField>;
+const LIVE_FIELDS: readonly LiveField[] = ['status', 'departure', 'arrival', 'isDelayed'];
 
 const sameValue = (field: LiveField, a: LiveValues, b: LiveValues): boolean =>
-  field === 'status'
-    ? a.status === b.status
-    : new Date(a[field]).getTime() === new Date(b[field]).getTime();
+  field === 'departure' || field === 'arrival'
+    ? new Date(a[field]).getTime() === new Date(b[field]).getTime()
+    : a[field] === b[field];
 
 const STATUS_TONES: Partial<Record<FlightStatus, StatusTone>> = {
   gateChanged: 'warning',
@@ -70,6 +71,7 @@ export class FlightList implements OnInit {
     'destination',
     'departure',
     'arrival',
+    'punctuality',
     'airline',
     'status',
     'basePrice',
@@ -84,6 +86,7 @@ export class FlightList implements OnInit {
     departureFrom: new FormControl<Date | null>(null),
     departureTo: new FormControl<Date | null>(null),
     status: new FormControl<FlightStatus | null>(null),
+    isDelayed: new FormControl<boolean | null>(null),
     airlineCode: new FormControl<string | null>(null),
   });
 
@@ -104,12 +107,15 @@ export class FlightList implements OnInit {
         for (const flight of flights) {
           const before = this.shownValues.get(flight.id);
           if (!before) continue;
-          for (const field of ['status', 'departure', 'arrival'] as const) {
+          for (const field of LIVE_FIELDS) {
             if (!sameValue(field, before, flight)) changed.add(`${flight.id}:${field}`);
           }
         }
         this.shownValues = new Map(
-          flights.map(({ id, status, departure, arrival }) => [id, { status, departure, arrival }]),
+          flights.map(({ id, status, departure, arrival, isDelayed }) => [
+            id,
+            { status, departure, arrival, isDelayed },
+          ]),
         );
         this.changed.set(changed);
       });

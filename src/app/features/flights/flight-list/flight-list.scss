@@ -89,7 +89,9 @@
   text-align: end;
 }
 
-.status {
+// The status and punctuality chips share a pill shape and tone colours
+.status,
+.punctuality {
   display: inline-block;
   padding: 2px 10px;
   border-radius: 999px;
@@ -185,8 +187,9 @@ th[mat-header-cell] {
   }
 }
 
-// The status chip keeps its tone colours and gets a green ring instead
-.status.changed {
+// The chips keep their tone colours and get a green ring instead
+.status.changed,
+.punctuality.changed {
   animation: status-changed 2.4s ease-out;
 }
 
