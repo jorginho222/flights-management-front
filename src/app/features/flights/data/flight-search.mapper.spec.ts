@@ -13,10 +13,10 @@ describe('flight search mapper', () => {
         ...emptyFilters(),
         origin: ezeiza,
         destination: heathrow,
-        status: 'delayed',
+        status: 'gateChanged',
         airlineCode: airlineFixture().code,
       }),
-    ).toEqual({ origin: 'EZE', destination: 'LHR', status: 'delayed', airlineCode: 'LG' });
+    ).toEqual({ origin: 'EZE', destination: 'LHR', status: 'gateChanged', airlineCode: 'LG' });
   });
 
   it('ignores text left in an airport control', () => {

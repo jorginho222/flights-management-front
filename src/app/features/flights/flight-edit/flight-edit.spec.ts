@@ -147,14 +147,14 @@ describe('FlightEdit', () => {
     expect(saveButton(el).disabled).toBe(true);
   });
 
-  it('saves the schedule with PATCH, then refills the untouched status tab and locks the details', async () => {
+  it('saves the schedule with PATCH, then refills the untouched status tab and keeps the details editable', async () => {
     const flight = flightFixture();
     api.updateSchedule.mockImplementation(({ departure, arrival }) =>
-      of({ ...flight, departure, arrival, status: 'delayed', version: 4 }),
+      of({ ...flight, departure, arrival, wasRescheduled: true, version: 4 }),
     );
     const { fixture, el, schedule, status, details } = await render(flight);
     await openTab(fixture, el, 'Schedule');
-    expect(text(el)).toContain('Saving a new schedule marks the flight Advanced');
+    expect(text(el)).toContain('Saving a new departure or arrival marks the flight Rescheduled');
 
     const time = toScheduleValue(flight).departureTime;
     schedule.controls.departureTime.setValue({ ...time, minute: 45 });
@@ -169,14 +169,11 @@ describe('FlightEdit', () => {
       departure: departure.toISOString(),
       arrival: flight.arrival,
     });
-    expect(status.getRawValue()).toEqual({ status: 'delayed' });
-    expect(details.disabled).toBe(true);
+    expect(status.getRawValue()).toEqual({ status: 'scheduled' });
+    expect(details.disabled).toBe(false);
 
     await openTab(fixture, el, 'Airline, airplane, route and price');
-    expect(text(el)).toContain(
-      'Only scheduled flights can change these details, and this flight is Delayed.',
-    );
-    expect(saveButton(el).disabled).toBe(true);
+    expect(text(el)).not.toContain('Only scheduled flights can change these details');
   });
 
   it('saves the status with PATCH and keeps unsaved edits in the other tabs', async () => {

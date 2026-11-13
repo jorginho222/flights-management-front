@@ -7,9 +7,6 @@ export const FLIGHT_STATUSES = [
   'scheduled',
   'checkInOpen',
   'checkInClosed',
-  'onTime',
-  'advanced',
-  'delayed',
   'gateChanged',
   'boarding',
   'finalCall',
@@ -48,6 +45,8 @@ export interface Flight {
   /** Statute miles. */
   distance: number;
   isFullyReserved: boolean;
+  /** Set once the departure or arrival changed. The status stays as it was. */
+  wasRescheduled: boolean;
   /**
    * Bumped by every save and by every order. `PUT /flights/:id` sends back the version
    * the form loaded, and is rejected with 409 if the flight has orders and it's stale.
@@ -56,7 +55,10 @@ export interface Flight {
 }
 
 /** The data of a `flight.updated` event from `GET /flights/events`, sent after a status or schedule change. */
-export type FlightUpdate = Pick<Flight, 'id' | 'status' | 'departure' | 'arrival' | 'version'>;
+export type FlightUpdate = Pick<
+  Flight,
+  'id' | 'status' | 'departure' | 'arrival' | 'wasRescheduled' | 'version'
+>;
 
 /**
  * What `FlightsApi.updates` emits. `connected` comes on every open, with `reconnect` set after
@@ -121,7 +123,7 @@ export interface UpdateFlightInput {
   version: number;
 }
 
-/** The body of `PATCH /flights/schedule`. The API also sets the status to advanced or delayed. */
+/** The body of `PATCH /flights/schedule`. The API also sets `wasRescheduled` when a time changes. */
 export interface FlightScheduleInput {
   id: string;
   /** ISO date-time. */

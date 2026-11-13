@@ -218,9 +218,10 @@ describe('FlightsStore', () => {
       type: 'updated',
       flight: {
         id: flight.id,
-        status: 'delayed',
+        status: 'boarding',
         departure: '2026-12-01T15:00:00.000Z',
         arrival: '2026-12-02T05:00:00.000Z',
+        wasRescheduled: true,
         version: 4,
         ...changes,
       },
@@ -240,9 +241,10 @@ describe('FlightsStore', () => {
       live$.next(update());
       expect(store.entityMap()[flight.id]).toEqual({
         ...flight,
-        status: 'delayed',
+        status: 'boarding',
         departure: '2026-12-01T15:00:00.000Z',
         arrival: '2026-12-02T05:00:00.000Z',
+        wasRescheduled: true,
         version: 4,
       });
     });
@@ -262,7 +264,7 @@ describe('FlightsStore', () => {
       store.loadOne(flight.id);
       live$.next(update());
       expect(store.selected()).toEqual(flight);
-      expect(store.entityMap()[flight.id].status).toBe('delayed');
+      expect(store.entityMap()[flight.id].status).toBe('boarding');
     });
 
     it('re-runs the last search on the same page after a reconnect, not the first open', () => {
@@ -327,7 +329,7 @@ describe('FlightsStore', () => {
       expect(onSuccess).toHaveBeenCalledExactlyOnceWith(saved);
     });
 
-    it('merges only the schedule, status and version from a PATCH, which lacks relations', () => {
+    it('merges only the schedule, status, rescheduled flag and version from a PATCH, which lacks relations', () => {
       searchAndSelect();
       const onSuccess = vi.fn();
       const schedule = {
@@ -338,13 +340,17 @@ describe('FlightsStore', () => {
       store.updateSchedule({ input: schedule, onSuccess });
       expect(api.updateSchedule).toHaveBeenCalledExactlyOnceWith(schedule);
 
-      const bare: Partial<Flight> = flightFixture({ ...schedule, status: 'delayed', version: 4 });
+      const bare: Partial<Flight> = flightFixture({
+        ...schedule,
+        wasRescheduled: true,
+        version: 4,
+      });
       for (const relation of ['airline', 'airplane', 'origin', 'destination'] as const) {
         delete bare[relation];
       }
       updates.schedule.next(bare as Flight);
 
-      const expected = { ...flight, ...schedule, status: 'delayed', version: 4 };
+      const expected = { ...flight, ...schedule, wasRescheduled: true, version: 4 };
       expect(store.selected()).toEqual(expected);
       expect(store.entityMap()[flight.id]).toEqual(expected);
       expect(onSuccess).toHaveBeenCalledExactlyOnceWith(expected);

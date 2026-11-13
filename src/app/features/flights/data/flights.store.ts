@@ -95,10 +95,11 @@ export interface SaveFlightRequest<T> {
 }
 
 /** The PATCH endpoints send the flight back without its relations, so only these are kept. */
-const patchedFields = ({ departure, arrival, status, version }: Flight) => ({
+const patchedFields = ({ departure, arrival, status, wasRescheduled, version }: Flight) => ({
   departure,
   arrival,
   status,
+  wasRescheduled,
   version,
 });
 
@@ -310,7 +311,7 @@ export const FlightsStore = signalStore(
           (saved) => saved,
         ),
 
-        /** The API also sets the status to advanced or delayed. */
+        /** The API also sets `wasRescheduled` when a time changes, and leaves the status alone. */
         updateSchedule: saveSection<FlightScheduleInput>(
           'schedule',
           (schedule) => api.updateSchedule(schedule),

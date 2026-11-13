@@ -114,6 +114,19 @@
   }
 }
 
+// Under a departure or arrival whose schedule changed. It follows live updates like the time above it.
+.rescheduled {
+  display: block;
+  width: fit-content;
+  margin-top: 4px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font: var(--mat-sys-label-small);
+  white-space: nowrap;
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+}
+
 // Live updates are green throughout. Material's palettes have no green, so it's set here.
 :host {
   --live-green: light-dark(#188038, #81c995);
