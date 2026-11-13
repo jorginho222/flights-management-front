@@ -208,6 +208,8 @@
       "invalidDates": "Enter valid dates, with the start before the end",
       "status": "Status",
       "anyStatus": "Any status",
+      "punctuality": "Punctuality",
+      "anyPunctuality": "Any punctuality",
       "airline": "Airline",
       "anyAirline": "Any airline",
       "airlinesError": "Couldn't load airlines",
@@ -226,10 +228,15 @@
       "destination": "Destination",
       "departure": "Departure",
       "arrival": "Arrival",
+      "punctuality": "Punctuality",
       "airline": "Airline",
       "status": "Status",
       "basePrice": "Base price",
       "actions": "Actions"
+    },
+    "punctuality": {
+      "onTime": "On time",
+      "delayed": "Delayed"
     },
     "list": {
       "loadError": "Couldn't load flights.",
@@ -238,7 +245,7 @@
       "rescheduled": "Rescheduled",
       "live": {
         "connecting": "Connecting to live updates…",
-        "connected": "Status and schedule changes appear as they happen",
+        "connected": "Status, schedule and delay changes appear as they happen",
         "reconnecting": "Live updates paused. Reconnecting…"
       },
       "liveBadge": {

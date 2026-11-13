@@ -48,16 +48,24 @@ export interface Flight {
   /** Set once the departure or arrival changed. The status stays as it was. */
   wasRescheduled: boolean;
   /**
+   * Still on the ground past its departure plus the API's tolerance. It stays once the
+   * flight departs or is cancelled. The API sets it; the panel never computes it.
+   */
+  isDelayed: boolean;
+  /**
    * Bumped by every save and by every order. `PUT /flights/:id` sends back the version
    * the form loaded, and is rejected with 409 if the flight has orders and it's stale.
    */
   version: number;
 }
 
-/** The data of a `flight.updated` event from `GET /flights/events`, sent after a status or schedule change. */
+/**
+ * The data of a `flight.updated` event from `GET /flights/events`, sent after a status or
+ * schedule change, or when the API's delay job marks the flight delayed.
+ */
 export type FlightUpdate = Pick<
   Flight,
-  'id' | 'status' | 'departure' | 'arrival' | 'wasRescheduled' | 'version'
+  'id' | 'status' | 'departure' | 'arrival' | 'wasRescheduled' | 'isDelayed' | 'version'
 >;
 
 /**
@@ -86,6 +94,7 @@ export interface FlightSearchCriteria {
   /** ISO date-time, inclusive. */
   departureTo?: string;
   status?: FlightStatus;
+  isDelayed?: boolean;
   airlineCode?: string;
   page?: number;
   limit?: number;

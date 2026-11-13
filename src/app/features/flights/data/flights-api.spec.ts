@@ -139,6 +139,7 @@ describe('FlightsApi and AirportsApi', () => {
         departure: '2026-12-01T15:00:00.000Z',
         arrival: '2026-12-02T05:00:00.000Z',
         wasRescheduled: true,
+        isDelayed: false,
         version: 4,
       };
       source.listeners['flight.updated']({ data: JSON.stringify(flight) });

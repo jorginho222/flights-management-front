@@ -222,6 +222,7 @@ describe('FlightsStore', () => {
         departure: '2026-12-01T15:00:00.000Z',
         arrival: '2026-12-02T05:00:00.000Z',
         wasRescheduled: true,
+        isDelayed: true,
         version: 4,
         ...changes,
       },
@@ -245,6 +246,7 @@ describe('FlightsStore', () => {
         departure: '2026-12-01T15:00:00.000Z',
         arrival: '2026-12-02T05:00:00.000Z',
         wasRescheduled: true,
+        isDelayed: true,
         version: 4,
       });
     });
@@ -329,7 +331,7 @@ describe('FlightsStore', () => {
       expect(onSuccess).toHaveBeenCalledExactlyOnceWith(saved);
     });
 
-    it('merges only the schedule, status, rescheduled flag and version from a PATCH, which lacks relations', () => {
+    it('merges only the schedule, status, flags and version from a PATCH, which lacks relations', () => {
       searchAndSelect();
       const onSuccess = vi.fn();
       const schedule = {
@@ -343,6 +345,7 @@ describe('FlightsStore', () => {
       const bare: Partial<Flight> = flightFixture({
         ...schedule,
         wasRescheduled: true,
+        isDelayed: true,
         version: 4,
       });
       for (const relation of ['airline', 'airplane', 'origin', 'destination'] as const) {
@@ -350,7 +353,13 @@ describe('FlightsStore', () => {
       }
       updates.schedule.next(bare as Flight);
 
-      const expected = { ...flight, ...schedule, wasRescheduled: true, version: 4 };
+      const expected = {
+        ...flight,
+        ...schedule,
+        wasRescheduled: true,
+        isDelayed: true,
+        version: 4,
+      };
       expect(store.selected()).toEqual(expected);
       expect(store.entityMap()[flight.id]).toEqual(expected);
       expect(onSuccess).toHaveBeenCalledExactlyOnceWith(expected);

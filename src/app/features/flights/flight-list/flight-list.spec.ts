@@ -85,12 +85,14 @@ describe('FlightList', () => {
         label: badge.textContent?.trim(),
       }));
     const chip = (el: HTMLElement) => el.querySelector<HTMLElement>('td .status')!;
+    const punctuality = (el: HTMLElement) => el.querySelector<HTMLElement>('td .punctuality')!;
     const labels = (el: HTMLElement) =>
       Array.from(el.querySelectorAll('td .rescheduled')).map((label) => label.textContent?.trim());
     const dateCells = (el: HTMLElement) =>
       Array.from(el.querySelectorAll<HTMLElement>('td .live-value'));
     const liveUpdate = (changes: Partial<Flight>): FlightLiveEvent => {
-      const { id, departure, arrival, status, wasRescheduled, version } = flightFixture();
+      const { id, departure, arrival, status, wasRescheduled, isDelayed, version } =
+        flightFixture();
       return {
         type: 'updated',
         flight: {
@@ -99,16 +101,17 @@ describe('FlightList', () => {
           arrival,
           status,
           wasRescheduled,
+          isDelayed,
           version: version + 1,
           ...changes,
         },
       };
     };
 
-    it('shows a badge below departure, arrival and status that follows the connection', async () => {
+    it('shows a badge above departure, arrival, punctuality and status that follows the connection', async () => {
       const { fixture, el } = await render();
       expect(badges(el)).toEqual(
-        ['Departure', 'Arrival', 'Status'].map((column) => ({
+        ['Departure', 'Arrival', 'Punctuality', 'Status'].map((column) => ({
           column,
           state: 'connecting',
           label: 'Connecting…',
@@ -118,6 +121,7 @@ describe('FlightList', () => {
       live$.next({ type: 'connected', reconnect: false });
       await settle(fixture);
       expect(badges(el).map(({ state, label }) => [state, label])).toEqual([
+        ['connected', 'Live'],
         ['connected', 'Live'],
         ['connected', 'Live'],
         ['connected', 'Live'],
@@ -141,7 +145,7 @@ describe('FlightList', () => {
 
       live$.next(liveUpdate({ status: 'boarding' }));
       await settle(fixture);
-      expect(rows(el)[0][6]).toBe('Boarding');
+      expect(rows(el)[0][7]).toBe('Boarding');
       expect(chip(el).classList).toContain('changed');
       expect(dateCells(el).map((cell) => cell.classList.contains('changed'))).toEqual([
         false,
@@ -151,6 +155,23 @@ describe('FlightList', () => {
       chip(el).dispatchEvent(new Event('animationend'));
       await settle(fixture);
       expect(chip(el).classList).not.toContain('changed');
+    });
+
+    it('shows a live delay and flashes it until the animation ends', async () => {
+      const { fixture, el } = await render();
+      expect(punctuality(el).textContent?.trim()).toBe('On time');
+      expect(punctuality(el).dataset['tone']).toBe('success');
+
+      live$.next(liveUpdate({ isDelayed: true }));
+      await settle(fixture);
+      expect(rows(el)[0][5]).toBe('Delayed');
+      expect(punctuality(el).dataset['tone']).toBe('error');
+      expect(punctuality(el).classList).toContain('changed');
+      expect(chip(el).classList).not.toContain('changed');
+
+      punctuality(el).dispatchEvent(new Event('animationend'));
+      await settle(fixture);
+      expect(punctuality(el).classList).not.toContain('changed');
     });
 
     it('flashes only the departure or arrival that changed, each until its animation ends', async () => {
@@ -213,6 +234,32 @@ describe('FlightList', () => {
     expect(edit.getAttribute('aria-label')).toBe('Edit flight LG1132');
   });
 
+  it('shows a delayed flight as Delayed, and nothing for a cancelled one', async () => {
+    const { el } = await render(
+      of(
+        pageOf([
+          flightFixture({ isDelayed: true }),
+          flightFixture({
+            id: '44444444-4444-4444-8444-444444444444',
+            status: 'cancelled',
+            isDelayed: true,
+          }),
+        ]),
+      ),
+    );
+    expect(rows(el).map((cells) => cells[5])).toEqual(['Delayed', '']);
+  });
+
+  it('offers any, on-time and delayed in the punctuality filter', async () => {
+    const { fixture, el } = await render();
+    el.querySelectorAll<HTMLElement>('mat-select')[1].click();
+    await settle(fixture);
+    const options = Array.from(document.querySelectorAll('mat-option')).map((option) =>
+      option.textContent?.trim(),
+    );
+    expect(options).toEqual(['Any punctuality', 'On time', 'Delayed']);
+  });
+
   it('shows no rescheduled label for a flight that keeps its schedule', async () => {
     const { el } = await render();
     expect(el.querySelectorAll('td .rescheduled')).toHaveLength(0);
@@ -238,6 +285,7 @@ describe('FlightList', () => {
       'Destination',
       'Departure',
       'Arrival',
+      'Punctuality',
       'Airline',
       'Status',
       'Base price',
@@ -248,9 +296,10 @@ describe('FlightList', () => {
     // IATA code above the city
     expect(cells[1]).toMatch(/^EZE\s*Ezeiza$/);
     expect(cells[2]).toMatch(/^LHR\s*London$/);
-    expect(cells[5]).toBe('Aerolineas Lagarza');
-    expect(cells[6]).toBe('In the air');
-    expect(cells[7]).toBe('850.50');
+    expect(cells[5]).toBe('On time');
+    expect(cells[6]).toBe('Aerolineas Lagarza');
+    expect(cells[7]).toBe('In the air');
+    expect(cells[8]).toBe('850.50');
   });
 
   it('submits every filter, mapped to the API criteria', async () => {
@@ -261,6 +310,7 @@ describe('FlightList', () => {
       departureFrom: null,
       departureTo: null,
       status: 'gateChanged',
+      isDelayed: true,
       airlineCode: 'LG',
     });
     button(el, 'Search').click();
@@ -270,6 +320,7 @@ describe('FlightList', () => {
       origin: 'EZE',
       destination: 'LHR',
       status: 'gateChanged',
+      isDelayed: true,
       airlineCode: 'LG',
       page: 1,
       limit: 20,
@@ -278,7 +329,7 @@ describe('FlightList', () => {
 
   it('lists the airlines by name and code in the airline filter', async () => {
     const { fixture, el } = await render();
-    el.querySelectorAll<HTMLElement>('mat-select')[1].click();
+    el.querySelectorAll<HTMLElement>('mat-select')[2].click();
     await settle(fixture);
     const options = Array.from(document.querySelectorAll('mat-option')).map((option) =>
       option.textContent?.trim(),

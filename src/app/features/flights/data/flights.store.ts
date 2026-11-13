@@ -95,13 +95,14 @@ export interface SaveFlightRequest<T> {
 }
 
 /** The PATCH endpoints send the flight back without its relations, so only these are kept. */
-const patchedFields = ({ departure, arrival, status, wasRescheduled, version }: Flight) => ({
+const patchedFields = ({
   departure,
   arrival,
   status,
   wasRescheduled,
+  isDelayed,
   version,
-});
+}: Flight) => ({ departure, arrival, status, wasRescheduled, isDelayed, version });
 
 export const FlightsStore = signalStore(
   withEntities<Flight>(),

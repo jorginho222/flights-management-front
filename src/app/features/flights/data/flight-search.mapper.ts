@@ -10,6 +10,8 @@ export interface FlightSearchFilters {
   /** A calendar day, in local time. Flights during that whole day match. */
   departureTo: Date | null;
   status: FlightStatus | null;
+  /** `true` for delayed flights, `false` for on-time ones, `null` for both. */
+  isDelayed: boolean | null;
   airlineCode: string | null;
 }
 
@@ -20,6 +22,7 @@ export function emptyFilters(): FlightSearchFilters {
     departureFrom: null,
     departureTo: null,
     status: null,
+    isDelayed: null,
     airlineCode: null,
   };
 }
@@ -39,6 +42,7 @@ export function toSearchCriteria(filters: FlightSearchFilters): FlightSearchCrit
     criteria.departureFrom = startOfDay(filters.departureFrom).toISOString();
   if (filters.departureTo) criteria.departureTo = endOfDay(filters.departureTo).toISOString();
   if (filters.status) criteria.status = filters.status;
+  if (filters.isDelayed !== null) criteria.isDelayed = filters.isDelayed;
   if (filters.airlineCode) criteria.airlineCode = filters.airlineCode;
   return criteria;
 }

@@ -52,6 +52,7 @@ export function flightFixture(overrides: Partial<Flight> = {}): Flight {
     distance: 6900,
     isFullyReserved: false,
     wasRescheduled: false,
+    isDelayed: false,
     version: 3,
     ...overrides,
   };
